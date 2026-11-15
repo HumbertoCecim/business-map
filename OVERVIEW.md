@@ -1,0 +1,7 @@
+Business Map acompanha o negócio com áreas livres, cards, conexões, fontes, foco e decisões. O serviço local oferece um mapa no navegador e uma conversa contextual com Codex ou Claude; esta integração opcional mantém os painéis e a conversa nativa do Paseo sobre os mesmos dados.
+
+As propostas dos agentes ficam separadas do conteúdo confirmado. Você revisa cada elemento e escolhe texto, prioridades e foco. Skills são pastas completas importadas mediante prévia; ajustes preservam origem e recursos. A importação não executa scripts.
+
+Requer Paseo 0.15.4 e um serviço Business Map ativo para a raiz registrada do projeto. Conecte o painel com o código temporário criado no navegador; a autorização fica só em memória. Se o serviço não estiver disponível, o painel informa como abri-lo e não grava diretamente no projeto.
+
+Dados ficam em .business-board na raiz canônica e são compartilhados por workspaces e worktrees. A migração de quadros anteriores exige confirmação no navegador e backup preservado, com o escritor antigo encerrado. Texto em edição é preservado diante de conflitos. A conversa nativa continua usando suas credenciais e permissões; o Ask do navegador envia o contexto escolhido ao provider local quando solicitado.

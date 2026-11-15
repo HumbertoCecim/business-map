@@ -1,0 +1,76 @@
+{
+  "name": "business-map",
+  "private": false,
+  "version": "0.5.0",
+  "description": "Local business map with reviewed agent proposals, versioned skills, CLI and MCP; optional Paseo integration.",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "paseo-plugin.json",
+    "OVERVIEW.md",
+    "README.md",
+    "LICENSE",
+    "PRODUCT.md",
+    "DESIGN.md",
+    "docs/",
+    "tsconfig.json",
+    "OVERVIEW.*.md",
+    "index.client.ts",
+    "index.client.tsx",
+    "index.server.ts",
+    "index.server.tsx",
+    "client/",
+    "server/",
+    "shared/",
+    "build/",
+    "web/build/",
+    "START-HERE.md",
+    "skills/",
+    "scripts/build.mjs",
+    "local/",
+    "licenses/",
+    "THIRD_PARTY_NOTICES.md",
+    "SECURITY.md"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit && tsc --noEmit -p web/tsconfig.json",
+    "test": "tsx --test server/tests/*.test.ts local/tests/*.test.ts",
+    "build": "node scripts/build.mjs",
+    "business": "tsx local/cli.ts",
+    "prepack": "npm run build"
+  },
+  "devDependencies": {
+    "@getpaseo/client": "0.15.4",
+    "@getpaseo/plugin": "0.15.4",
+    "@getpaseo/protocol": "0.15.4",
+    "@playwright/test": "^1.65.1",
+    "@tanstack/react-query": "^5.90.11",
+    "@types/node": "^22.0.0",
+    "@types/react": "~19.2.0",
+    "@types/react-dom": "~19.2.0",
+    "esbuild": "^0.28.2",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.8",
+    "@xyflow/react": "^12.12.1",
+    "elkjs": "^0.12.1",
+    "lucide-react": "^1.73.0",
+    "react-dom": "^19.1.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.4.3"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "bin": {
+    "business": "build/cli.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HumbertoCecim/business-map.git"
+  }
+}

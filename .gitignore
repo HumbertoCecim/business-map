@@ -1,0 +1,14 @@
+node_modules/
+.local/
+.business-board/
+.npm-cache/
+*.tsbuildinfo
+build/
+web/build/
+dist/
+debug.log
+*.log
+.business-map/
+.env
+.env.*
+!.env.example
