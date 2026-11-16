@@ -8,7 +8,7 @@ import { createEventHeaders, importPortableBoard, canonicalJSON, sha256 } from '
 import { validateSkillPackage } from '@/business/skills'
 import { BusinessObject } from '@/business/object'
 import { manualCommandSchema, undoSchema, type Actor } from '@/business/model'
-import { createBusinessMcpResource, approvedClientIds, type BusinessMcpEnv } from '@/mcp'
+import { createBusinessMcpResource, isApprovedChatgptClient, type BusinessMcpEnv } from '@/mcp'
 import type { OAuthBinding } from '../../../oauth/src/index'
 import widgetHtml from '../../../widget/dist/map.html?raw'
 
@@ -80,10 +80,9 @@ export function mcpRoute(request: Request, env: PilotBindings, ctx: ExecutionCon
       if (!await authorizedUser(db, grant.userId, env)) return null
       const link = await membership(db, grant.userId)
       if (!link || grant.oauthGeneration !== link.oauthGeneration) return null
-      const approved = approvedClientIds(env.APPROVED_CHATGPT_CLIENT_IDS)
       return { userId: grant.userId, businessId: link.businessId, clientId: grant.clientId,
         grantId: grant.grantId, scopes: grant.scopes,
-        trustedChatgpt: approved.has(grant.clientId) && grant.scopes.includes('business:approve') }
+        trustedChatgpt: isApprovedChatgptClient(grant.clientId, env.APPROVED_CHATGPT_CLIENT_IDS) && grant.scopes.includes('business:approve') }
     },
   })
   // Project the RPC stubs onto their public contracts; avoid recursively instantiating

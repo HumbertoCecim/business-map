@@ -1,7 +1,8 @@
 import { WorkerEntrypoint } from 'cloudflare:workers'
 import { AuthorizationError, OAuthAuthorizationServer, type AuthRequest, type OAuthHelpers } from '@cloudflare/workers-oauth-provider'
-import { approvedClientIds, BUSINESS_SCOPES, canonicalUrl, consentScopes, escapeHtml } from './policy'
+import { isApprovedChatgptClient, BUSINESS_SCOPES, canonicalUrl, consentScopes, escapeHtml } from './policy'
 import { ensureChatgptClient } from './chatgpt-client'
+import { consentPage as page } from './consent-page'
 
 export interface OAuthEnv {
   OAUTH_KV: KVNamespace
@@ -35,13 +36,14 @@ export function createOAuthAuthorizationServer(env: OAuthEnv) {
     clientRegistrationTTL: 60 * 60 * 24 * 30,
     allowTokenExchangeGrant: false,
     allowPrivateUseRedirectUris: false,
-    // DCR names are self-asserted. Only an operator-approved client ID may receive app approval rights.
-    clientIdMetadataDocumentEnabled: false,
+    // The provider validates CIMD documents and private_key_jwt using public JWKS.
+    // DCR names remain self-asserted and never grant approval rights.
+    clientIdMetadataDocumentEnabled: true,
     tokenExchangeCallback: async ({ userId, clientId, grantId, resource, requestedScope, props }) => {
       if (typeof props?.oauthGeneration !== 'string' || typeof props?.authorizedAt !== 'number') throw new Error('Authorization generation is missing')
       return {
         accessTokenProps: { userId, clientId, grantId, resource, oauthGeneration: props.oauthGeneration, authorizedAt: props.authorizedAt },
-        accessTokenScope: consentScopes(requestedScope, approvedClientIds(env.APPROVED_CHATGPT_CLIENT_IDS).has(clientId)),
+        accessTokenScope: consentScopes(requestedScope, isApprovedChatgptClient(clientId, env.APPROVED_CHATGPT_CLIENT_IDS)),
       }
     },
   })
@@ -59,16 +61,6 @@ function requirePkce(request: AuthRequest, env: OAuthEnv) {
   if (request.scope.some((scope) => !BUSINESS_SCOPES.includes(scope as typeof BUSINESS_SCOPES[number]))) throw new Error('Escopo inválido')
 }
 
-function page(content: string, headers = new Headers(), status = 200) {
-  headers.set('Content-Type', 'text/html; charset=utf-8')
-  headers.set('Cache-Control', 'no-store')
-  headers.set('Referrer-Policy', 'no-referrer')
-  headers.set('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'")
-  headers.set('X-Frame-Options', 'DENY')
-  headers.set('X-Content-Type-Options', 'nosniff')
-  return new Response(`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Autorizar · Business Map</title><style>body{font:16px system-ui;background:#f4f3ef;color:#14281f;margin:0;padding:32px}main{max-width:580px;margin:6vh auto;background:white;padding:32px;border-radius:18px}h1{font-size:27px}p,li{line-height:1.6}code{overflow-wrap:anywhere}button{font:inherit;padding:12px 18px;border:1px solid #c5ccc7;border-radius:10px;background:white;cursor:pointer;margin:8px 8px 0 0}button[value=approve]{background:#145b45;color:white}small{color:#52655a}</style><main>${content}</main></html>`, { status, headers })
-}
-
 async function authorize(request: Request, env: OAuthEnv, api: OAuthHelpers) {
   // This worker has no public route. Only the main worker may supply these identity headers
   // after authenticating BetterAuth and checking pilot membership.
@@ -80,12 +72,12 @@ async function authorize(request: Request, env: OAuthEnv, api: OAuthHelpers) {
     const authRequest = await api.parseAuthRequest(request)
     requirePkce(authRequest, env)
     const description = await api.describeConsent(authRequest)
-    const approved = approvedClientIds(env.APPROVED_CHATGPT_CLIENT_IDS).has(authRequest.clientId)
+    const approved = isApprovedChatgptClient(authRequest.clientId, env.APPROVED_CHATGPT_CLIENT_IDS)
     const scope = consentScopes(authRequest.scope, approved)
     if (!scope.includes('business:read')) return page('<h1>Permissão necessária</h1><p>O conector deve solicitar business:read.</p>', undefined, 400)
     const transaction = await api.beginConsent(authRequest)
     await env.OAUTH_KV.put(await consentKey(transaction.handle), JSON.stringify({ userId, scope, oauthGeneration }), { expirationTtl: 600 })
-    return page(`<h1>Conectar seu mapa</h1><p>Você está conectado como <strong>${escapeHtml(email || userId)}</strong>.</p><p>Aplicativo: <strong>${escapeHtml(description.clientName)}</strong> <small>(nome informado pelo cliente)</small></p><p>ID do cliente: <code>${escapeHtml(authRequest.clientId)}</code></p><p>Destino da autorização: <code>${escapeHtml(description.redirectHost)}</code></p><p>Permissões:</p><ul>${scope.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul><p>${approved ? 'Este cliente foi aprovado para exibir a confirmação no ChatGPT. Alterações exigem seu clique no mapa.' : 'Este cliente pode consultar e propor. Confirme alterações no site do Business Map.'}</p><p>Você pode revogar a conexão a qualquer momento no site.</p><form method="post" action="/authorize"><input type="hidden" name="handle" value="${escapeHtml(transaction.handle)}"><button name="decision" value="approve" type="submit">Autorizar conexão</button><button name="decision" value="deny" type="submit">Cancelar</button></form>`, transaction.headers)
+    return page(`<h1>Conectar seu mapa</h1><p>Você está conectado como <strong>${escapeHtml(email || userId)}</strong>.</p><p>Aplicativo: <strong>${escapeHtml(description.clientName)}</strong> <small>(nome informado pelo cliente)</small></p><p>ID do cliente: <code>${escapeHtml(authRequest.clientId)}</code></p><p>Destino da autorização: <code>${escapeHtml(description.redirectHost)}</code></p><p>Permissões:</p><ul>${scope.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul><p>${approved ? 'Este cliente foi aprovado para exibir a confirmação no ChatGPT. Alterações exigem seu clique no mapa.' : 'Este cliente pode consultar e propor. Confirme alterações no site do Business Map.'}</p><p>Você pode revogar a conexão a qualquer momento no site.</p><form method="post" action="/authorize"><input type="hidden" name="handle" value="${escapeHtml(transaction.handle)}"><button name="decision" value="approve" type="submit">Autorizar conexão</button><button name="decision" value="deny" type="submit">Cancelar</button></form>`, transaction.headers, 200, description.redirectUri)
   }
   if (request.method !== 'POST') return new Response('Method not allowed', { status: 405, headers: { Allow: 'GET, POST' } })
   if (request.headers.get('origin') !== new URL(env.OAUTH_ISSUER).origin) return page('<h1>Origem inválida</h1>', undefined, 403)

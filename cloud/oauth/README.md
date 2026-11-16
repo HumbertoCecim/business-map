@@ -4,9 +4,19 @@ O Worker OAuth é privado: `workers_dev: false`, sem rotas públicas e sem previ
 
 O principal autentica a sessão BetterAuth, confere convite/conta e deriva o negócio em D1 antes de encaminhar `/authorize`. Ele remove os headers externos `x-business-user-id`, `x-business-user-email` e `x-business-oauth-generation`, e fornece seus valores por service binding. O Worker OAuth nunca deve receber uma rota pública independente: esses headers são uma fronteira interna de confiança, e não uma autenticação de Internet.
 
-## Provisionar o conector fixo ChatGPT
+## Conectar automaticamente com CIMD
 
-O piloto usa um **cliente confidencial fixo**, criado pelo operador com `OAuthHelpers.createClient`. O ID é gerado uma vez e reutilizado para todas as contas convidadas; cada conta ainda autentica e autoriza seu próprio negócio. Novos participantes não precisam de uma nova allowlist DCR.
+No ChatGPT, informe a URL HTTPS `<origem>/mcp`, escolha **OAuth** e selecione **CIMD**. Não é necessário preencher Client ID nem Client Secret. Entre com sua conta do Business Map, autorize e instale o plugin antes de usá-lo na conversa.
+
+O Worker OAuth usa `clientIdMetadataDocumentEnabled: true` e a flag `global_fetch_strictly_public`. A biblioteca instalada recupera e valida os metadados CIMD e as chaves públicas JWKS; a troca `private_key_jwt` verifica a assinatura do cliente. Somente o ID exato `https://chatgpt.com/oauth/client.json` recebe a política de confirmação ChatGPT automaticamente. Nome, prefixos, query strings ou URLs semelhantes não concedem essa permissão.
+
+A página de consentimento preserva a origem do POST nativo com `Referrer-Policy: same-origin`. Seu CSP permite somente a própria origem e a origem do callback previamente validado pela biblioteca. A verificação estrita de Origin, cookies de vínculo, handle de uso único e PKCE continua aplicada.
+
+O registro DCR permanece disponível para outros clientes: consulta e propostas com confirmação pelo site. Clientes fixos existentes também continuam funcionando por sua allowlist explícita; o procedimento abaixo é legado, não um requisito para novos participantes no ChatGPT.
+
+## Compatibilidade: conector fixo legado
+
+Conectores legados podem usar um **cliente confidencial fixo**, criado pelo operador com `OAuthHelpers.createClient`. O ID é gerado uma vez e reutilizado; cada conta ainda autentica e autoriza seu próprio negócio. Novos participantes devem preferir CIMD.
 
 1. Faça deploy do Worker OAuth privado com `OAuthBinding.ensureChatgptClient`. Esse método existe somente na service binding; nenhuma rota HTTP de bootstrap é publicada.
 2. Da pasta `cloud`, execute `node oauth/bootstrap/run.mjs staging` uma única vez por operador. O script abre um helper **somente em 127.0.0.1**, com chave aleatória efêmera e service binding remota autenticada pelo Wrangler, chama o método privado e encerra o helper. As credenciais são gravadas em `oauth/.credentials/chatgpt-staging.json`, ignorado pelo Git. Nada imprime o secret. Para produção, use o argumento `production` após configurar o ambiente e a URL MCP de produção.
@@ -16,7 +26,7 @@ O piloto usa um **cliente confidencial fixo**, criado pelo operador com `OAuthHe
 6. O único callback permitido no cliente fixo é `https://chatgpt.com/connector_platform_oauth_redirect`, o callback estável documentado oficialmente para servidores que anunciam e retornam `iss`, como este. Confira o callback exibido pela configuração do ChatGPT. Um callback diferente exige revisão explícita da configuração; `chat.openai.com` e padrões com curingas não são cadastrados automaticamente.
 7. Cada pessoa convidada entra no SaaS e aceita o consentimento. A página mostra o ID fixo e `business:approve`. Teste leitura, proposta, prévia canônica e confirmação por clique. O modelo pode criar propostas; somente a interface recebe os valores de confirmação em `_meta`. Se uma conexão antiga só tiver leitura/propostas, reconecte com as credenciais fixas: grants existentes não ganham escopos retroativamente.
 
-O registro dinâmico `/register` continua disponível para outros clientes OAuth, mas sua permissão `business:approve` é removida no consentimento e em cada emissão/renovação de token. O principal também exige o ID fixo aprovado antes de atribuir o canal `chatgpt`. Esses clientes podem ler/propor e confirmar no site autenticado. Um nome DCR como “ChatGPT” nunca é suficiente para obter aprovação.
+O registro dinâmico `/register` continua disponível para outros clientes OAuth, mas sua permissão `business:approve` é removida no consentimento e em cada emissão/renovação de token. O principal exige o ID oficial CIMD ou um ID legado explicitamente aprovado antes de atribuir o canal `chatgpt`. Clientes DCR podem ler/propor e confirmar no site autenticado. Um nome DCR como “ChatGPT” nunca é suficiente para obter aprovação.
 
 Ferramentas públicas: `business_get_context`, `business_query`, `business_read_skill`, `business_submit_proposal` e `business_show_map`. Ferramentas de interface: `business_get_ui_state`, `business_apply_proposal`, `business_reject_proposal` e `business_undo`.
 

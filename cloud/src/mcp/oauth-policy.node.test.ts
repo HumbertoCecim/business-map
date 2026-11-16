@@ -1,7 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import { approvedClientIds, canonicalUrl, consentScopes, escapeHtml } from '../../oauth/src/policy'
+import { approvedClientIds, canonicalUrl, CHATGPT_CIMD_CLIENT_ID, consentScopes, escapeHtml, isApprovedChatgptClient } from '../../oauth/src/policy'
 
 describe('OAuth pilot policy', () => {
+  it('automatically approves only the exact stable ChatGPT CIMD identifier and explicit legacy clients', () => {
+    expect(isApprovedChatgptClient(CHATGPT_CIMD_CLIENT_ID)).toBe(true)
+    expect(isApprovedChatgptClient('legacy-fixed-client', '["legacy-fixed-client"]')).toBe(true)
+    for (const id of [
+      'ChatGPT', 'https://chatgpt.com/oauth/client.json/',
+      'https://chatgpt.com/oauth/client.json?host=chatgpt',
+      'https://chatgpt.com/oauth/client.json#official',
+      'https://chatgpt.com.evil.example/oauth/client.json',
+      'https://chat.openai.com/oauth/client.json',
+      'http://chatgpt.com/oauth/client.json',
+    ]) expect(isApprovedChatgptClient(id)).toBe(false)
+    expect(approvedClientIds().has(CHATGPT_CIMD_CLIENT_ID)).toBe(false)
+  })
+
   it('uses exact operator-approved IDs and never client names for approval rights', () => {
     expect(approvedClientIds('["pilot-client"]').has('pilot-client')).toBe(true)
     expect(approvedClientIds('pilot-client,other-client').has('ChatGPT')).toBe(false)

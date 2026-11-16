@@ -6,7 +6,7 @@ Mapa vivo do negócio: edição manual no site, inteligência no seu ChatGPT. Pi
 
 1. Crie sua conta com o e-mail convidado e confirme o e-mail.
 2. Informe o nome do negócio. Crie áreas e notas livremente; skills são opcionais.
-3. Em **Conectar ChatGPT**, copie o endereço `/mcp` e selecione **OAuth** na autenticação do ChatGPT. O servidor recusa o modo sem autenticação. Para confirmar no próprio ChatGPT, use o Client ID e o Client Secret do conector fixo fornecidos pelo operador; a conexão automática permite consultar/propor e confirmar pelo site. Entre com seu login Business Map e autorize a conexão.
+3. Em **Conectar ChatGPT**, copie o endereço `/mcp`, selecione **OAuth** e escolha **CIMD** como registro do cliente. A identificação é automática, sem copiar Client ID ou Client Secret. Entre com seu login Business Map e autorize a conexão. O servidor recusa o modo sem autenticação.
 4. No ChatGPT, peça: “Abra meu mapa e proponha uma estrutura com o contexto que já temos”.
 5. Abra **Propostas**, compare o antes/depois calculado pelo servidor e confirme o lote inteiro. Propostas não alteram o conteúdo antes disso.
 
@@ -56,8 +56,8 @@ O build gera o widget e as rotas antes do typecheck. Testes Workers usam SQLite,
 5. Aplique `wrangler d1 migrations apply DB --env staging --remote`.
 6. Publique o OAuth: `wrangler deploy --config oauth/wrangler.jsonc --env staging`.
 7. Execute `pnpm deploy:staging`. O script seleciona explicitamente o ambiente, constrói e publica o arquivo gerado correto.
-8. Execute `node oauth/bootstrap/run.mjs staging`. O helper é local, chama RPC autenticado e não publica uma rota administrativa. A senha do cliente só é devolvida na primeira criação e fica em `oauth/.credentials/`, ignorado no Git.
-9. Configure `APPROVED_CHATGPT_CLIENT_IDS` nos **dois** Workers. Use o cliente fixo no conector ChatGPT. DCR permanece disponível para leitura/propostas; esses clientes confirmam no site.
+8. O Worker OAuth exige `clientIdMetadataDocumentEnabled` e a flag `global_fetch_strictly_public`, já configuradas. A descoberta deve anunciar CIMD e `private_key_jwt` antes de conectar o ChatGPT.
+9. Escolha CIMD no conector ChatGPT. O ID oficial é reconhecido após validação pela biblioteca. `APPROVED_CHATGPT_CLIENT_IDS` mantém a compatibilidade com clientes fixos existentes nos **dois** Workers; o bootstrap legado continua documentado em `oauth/README.md`. DCR permanece disponível para leitura/propostas, com confirmação no site.
 10. Valide o fluxo real no ChatGPT antes de abrir convites. Produção exige recursos e cliente próprios; o script recusa placeholders.
 
 Convites D1: tabela `pilot_invite`, e-mail em minúsculas, `status='active'`, `created_at` em milissegundos e `expires_at` opcional. Revogar/expirar corta o acesso de sessões existentes. Revogação explícita prevalece sobre `PILOT_INVITE_EMAILS` e `ADMIN_EMAILS`, destinados ao bootstrap privado.

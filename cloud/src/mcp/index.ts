@@ -5,7 +5,7 @@ import { createBusinessMcpServer, type BusinessMcpDomain, type McpSession } from
 
 export type { McpSession, BusinessMcpDomain } from './server'
 export { createBusinessMcpServer, MAP_RESOURCE_URI, MAP_MIME_TYPE } from './server'
-export { approvedClientIds } from '../../oauth/src/policy'
+export { approvedClientIds, isApprovedChatgptClient } from '../../oauth/src/policy'
 
 export interface BusinessMcpEnv {
   AUTH: { validateAccessToken(token: string): Promise<ValidatedGrant | null> }

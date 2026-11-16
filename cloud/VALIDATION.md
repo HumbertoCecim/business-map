@@ -6,10 +6,18 @@ Validado em 15–16/11/2026, com staging Cloudflare e dados sintéticos. Nenhum 
 
 - 27 testes de domínio: SQLite Durable Object, isolamento por dono, CAS concorrente, lotes atômicos, capabilities vinculadas/expiradas/adulteradas, replay, undo, importação determinística, R2 privado de skills/exportações e WebSocket.
 - 13 testes de acesso: D1 com migrações reais, cadastro por senha/social passando pelo mesmo hook de convite, convites revogados/expirados, verificação de e-mail, sessão fresca, CSRF e proxy de consentimento OAuth.
-- 20 testes MCP/OAuth: transportes reais SDK v2, registro, PKCE, consentimento, refresh, audience, revogação, cliente confidencial fixo sem TTL, escopos, metadados ocultos, confirmação e skills apenas textuais.
-- 3 testes do transporte do widget; 6 testes de navegador, incluindo ponte MCP Apps oficial em iframe sob CSP sem rede/eval, tela cheia, confirmação integral, revisão legível com detalhes técnicos opcionais, preservação de rascunho, controles móveis e avisos de remoção apesar de uma justificativa enganosa.
+- 31 testes MCP/OAuth: transportes reais SDK v2, registro, PKCE, consentimento, refresh, audience, revogação, cliente confidencial fixo sem TTL, escopos, metadados ocultos, confirmação e skills apenas textuais. A biblioteca OAuth instalada valida assinaturas ES256 com chaves efêmeras de teste; assinatura inválida, audience/sub incorretos, expiração e replay são recusados.
+- 3 testes do transporte do widget; 8 testes de navegador, incluindo ponte MCP Apps oficial em iframe sob CSP sem rede/eval, tela cheia, confirmação integral, revisão legível com detalhes técnicos opcionais, preservação de rascunho, controles móveis e avisos de remoção apesar de uma justificativa enganosa. O formulário nativo de consentimento preserva Origin sem sobrescrever esse cabeçalho no teste e alcança a origem do callback validado, sem enviar a URL de consentimento como Referer.
 - Build de produção e typecheck do Cloud; 125 testes e typecheck da instalação local também passaram.
 - [CI em checkout limpo Ubuntu](https://github.com/HumbertoCecim/business-map/actions/runs/43795734891): instalação com lockfiles, build completo, typecheck, todos os 63 testes Cloud e os seis testes de navegador passaram sem segredos ou SDK Paseo instalados.
+
+## Correção CIMD no staging — 16/11/2026
+
+Os Workers OAuth e principal foram publicados somente em staging. A descoberta pública anuncia CIMD e `private_key_jwt`. DCR e o cliente confidencial legado continuam cobertos pelas regressões.
+
+Um navegador Edge real, com conta sintética do operador, completou o formulário publicado sem forçar seu Origin e alcançou os callbacks validados de DCR e CIMD. A integração MCP leu contexto e mapa; DCR permaneceu sem confirmação no widget. Com CIMD, uma proposta sintética foi confirmada, apareceu na API do site e o conteúdo temporário foi restaurado.
+
+Esse cliente de integração usou PKCE público (`none`), também permitido pelos metadados oficiais do ChatGPT. Ele não possui a chave privada da OpenAI e não representa uma conexão real do host ChatGPT. A validação de `private_key_jwt` usa fixtures ES256 na suíte Workers. A instalação pelo próprio ChatGPT, a abertura do componente e a confirmação por um participante continuam aguardando o teste do usuário. Produção não foi publicada.
 
 A reprodução em uma cópia limpa Windows teve um resultado diferente: instalação, widget e TypeScript passaram, mas o build completo atingiu o limite de três minutos na transformação do cliente, sem erro de importação. Esse TypeScript também encontrou 22 declarações genéricas de tipos no diretório ancestral. O CI Linux independente acima concluiu o fluxo inteiro; o timeout específico do ensaio Windows permanece registrado, sem causa estabelecida.
 

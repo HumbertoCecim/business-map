@@ -1,5 +1,10 @@
 export const BUSINESS_SCOPES = ['business:read', 'business:propose', 'business:approve', 'offline_access'] as const
+export const CHATGPT_CIMD_CLIENT_ID = 'https://chatgpt.com/oauth/client.json'
 
+/** Called only after the OAuth provider has validated the client's metadata/token. */
+export function isApprovedChatgptClient(clientId: string, legacyIds?: string): boolean {
+  return clientId === CHATGPT_CIMD_CLIENT_ID || approvedClientIds(legacyIds).has(clientId)
+}
 export function approvedClientIds(value?: string): Set<string> {
   if (!value?.trim()) return new Set()
   try {

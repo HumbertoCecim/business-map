@@ -10,6 +10,8 @@ Capabilities aparecem apenas em `_meta` e na memória do componente: nunca em tr
 
 O Worker OAuth é privado e recebe identidade somente pelo Service Binding. Headers externos são descartados. PKCE S256 e state são obrigatórios; consentimento se vincula à sessão e geração atual da conta. Desconectar rotaciona a geração no D1 antes de revogar grants no KV: tokens/refreshes antigos são recusados mesmo durante propagação.
 
+CIMD usa a biblioteca OAuth instalada para validar os documentos e assinaturas `private_key_jwt`. Somente o identificador oficial exato do ChatGPT recebe a política automática de confirmação; DCR continua limitado a consulta/propostas. A página de consentimento preserva o Origin do formulário nativo e seu CSP só permite o callback previamente validado, mantendo a recusa de origens estrangeiras, cookies ausentes e handles adulterados.
+
 O site valida sessão e Origin nas mutações. Verificação de e-mail é obrigatória nos ambientes publicados. Convites revogados/expirados e contas banidas são recusados sem depender do cookie cache. Billing está desligado.
 
 R2 é privado. Skills têm caminhos, manifesto, tamanho e hashes validados; seu conteúdo é não confiável. Scripts nunca são executados e URLs não são baixadas automaticamente. MCP lê apenas recursos textuais selecionados.

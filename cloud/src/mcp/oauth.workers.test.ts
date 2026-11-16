@@ -110,6 +110,7 @@ describe('Private OAuth authorization worker', () => {
     expect((await consent(flow, 'approve', { 'x-business-user-id': 'different-owner' })).status).toBe(403)
     expect((await consent(flow, 'approve', { 'x-business-oauth-generation': 'generation-b' })).status).toBe(403)
     expect((await consent(flow, 'approve', { Cookie: '' })).status).toBe(400)
+    expect((await consent(flow, 'approve', { Origin: 'null' })).status).toBe(403)
     expect((await consent(flow, 'approve', { Origin: 'https://evil.example' })).status).toBe(403)
     const denied = await consent(flow, 'deny')
     expect(denied.status).toBe(303)
