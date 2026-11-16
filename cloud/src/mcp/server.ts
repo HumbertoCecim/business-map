@@ -8,7 +8,8 @@ import {
 import { skillVersionSchema } from '../../../shared/evolution'
 import type { StoredSkillPackage } from '../business/skills'
 
-export const MAP_RESOURCE_URI = 'ui://business-map/map-v1.html'
+export const MAP_RESOURCE_URI = 'ui://business-map/map-v2.html'
+const LEGACY_MAP_RESOURCE_URI = 'ui://business-map/map-v1.html'
 export const MAP_MIME_TYPE = 'text/html;profile=mcp-app'
 
 export interface McpSession {
@@ -153,9 +154,10 @@ export function createBusinessMcpServer(options: {
     return result({ ok: true, message: 'Última alteração desfeita.', revision: receipt.revision, receipt })
   }, true))
 
-  server.registerResource('business-map', MAP_RESOURCE_URI, { title: 'Business Map', description: 'Mapa canônico e confirmação de propostas.', mimeType: MAP_MIME_TYPE, _meta: { ui: { csp: { connectDomains: [], resourceDomains: [] }, prefersBorder: true }, 'openai/widgetDescription': 'Mapa do negócio conectado com revisão humana de alterações.' } }, async () => {
+  // New tool metadata avoids stale host templates; older conversations can still resolve v1.
+  for (const uri of [MAP_RESOURCE_URI, LEGACY_MAP_RESOURCE_URI]) server.registerResource(uri === MAP_RESOURCE_URI ? 'business-map' : 'business-map-legacy', uri, { title: 'Business Map', description: 'Mapa canônico e confirmação de propostas.', mimeType: MAP_MIME_TYPE, _meta: { ui: { csp: { connectDomains: [], resourceDomains: [] }, prefersBorder: true }, 'openai/widgetDescription': 'Mapa do negócio conectado com revisão humana de alterações.' } }, async () => {
     if (!session.scopes.includes('business:read')) throw new Error('Forbidden')
-    return { contents: [{ uri: MAP_RESOURCE_URI, mimeType: MAP_MIME_TYPE, text: await options.widgetHtml(), _meta: { ui: { csp: { connectDomains: [], resourceDomains: [] }, prefersBorder: true } } }] }
+    return { contents: [{ uri, mimeType: MAP_MIME_TYPE, text: await options.widgetHtml(), _meta: { ui: { csp: { connectDomains: [], resourceDomains: [] }, prefersBorder: true } } }] }
   })
   return server
 }

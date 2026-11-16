@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Background, BackgroundVariant, Controls, Handle, MarkerType, MiniMap, Position, ReactFlow, ReactFlowProvider, useReactFlow, useStore, type Node, type Edge, type NodeProps } from '@xyflow/react';
 import ELK from 'elkjs/lib/elk.bundled.js';
 import type { ElkNode } from 'elkjs/lib/elk-api';
@@ -14,8 +14,9 @@ const nodeTypes={card:CardNode,section:SectionNode};
 type Props={board:Board;selected:string;query:string;area:string|null;onSelect:(id:string)=>void;onAdd:(id:string)=>void;onOpen:(id:string)=>void;onProposal:(id:string)=>void;theme:string;readOnly?:boolean};
 function MapInner({board,selected,query,area,onSelect,onAdd,onOpen,onProposal,theme,readOnly}:Props){
  const [layout,setLayout]=useState<{nodes:Node<Data>[];edges:Edge[]}>({nodes:[],edges:[]});const flow=useReactFlow();const width=useStore(s=>s.width),height=useStore(s=>s.height);
+ const fittedSignature=useRef<string|null>(null);
  const signature=JSON.stringify([board.sections,board.relations,board.suggestions.filter(s=>s.kind==='map_draft'&&s.status==='pending'),area]);
- useEffect(()=>{let cancelled=false;const build=async()=>{
+ useEffect(()=>{if(!width||!height)return;let cancelled=false,frame=0,timer:number|undefined;const build=async()=>{
   const sections=board.sections.filter(s=>!area||s.id===area).map(s=>({...s,ghost:false,suggestionId:''}));
   if(!area)board.suggestions.filter(s=>s.status==='pending'&&s.mapDraft).forEach(s=>s.mapDraft!.sections.forEach(section=>{const existing=board.sections.find(a=>a.id===section.id),cards=section.cards.filter(c=>!board.sections.some(a=>a.cards.some(confirmed=>confirmed.id===c.id)));if(!existing||cards.length)sections.push({...section,cards,id:`ghost:${s.id}:${section.id}`,ghost:true,suggestionId:s.id});}));
   const cardOwners=new Map<string,string>();sections.forEach(s=>{cardOwners.set(s.id,s.id);s.cards.forEach(c=>cardOwners.set(c.id,s.id));});
@@ -32,8 +33,12 @@ function MapInner({board,selected,query,area,onSelect,onAdd,onOpen,onProposal,th
    const endpoint=(id:string)=>nodeIds.has(id)?id:nodeIds.has(`ghost:${s.id}:${id}`)?`ghost:${s.id}:${id}`:cardOwners.get(id);
    const source=endpoint(r.fromId),target=endpoint(r.toId);if(source&&target&&nodeIds.has(source)&&nodeIds.has(target))edges.push({id:`ghost:${s.id}:${r.id}`,source,target,label:r.label,type:'smoothstep',markerEnd:{type:MarkerType.ArrowClosed,width:14,height:14},style:{stroke:'var(--edge)',strokeWidth:1.2,strokeDasharray:'5 4'},labelStyle:{fill:'var(--muted)',fontSize:12},labelBgStyle:{fill:'var(--canvas)'},labelBgPadding:[7,5]});
   }));
-  if(!cancelled){setLayout({nodes,edges});requestAnimationFrame(()=>setTimeout(()=>{if(width<500&&!area)flow.setViewport({x:Math.max(12,((width||360)-(result.width||650)*.55)/2),y:18,zoom:.55},{duration:300});else flow.fitView({padding:.07,maxZoom:1,duration:300});},80));}
- };build().catch(console.error);return()=>{cancelled=true;};},[signature,width,height,readOnly]);
+  if(!cancelled){setLayout({nodes,edges});
+   // Refit new content, not host resizes or unchanged polling results. Preserve
+   // the user's pan/zoom when the inspector or iframe changes dimensions.
+   if(fittedSignature.current!==signature)frame=requestAnimationFrame(()=>{timer=window.setTimeout(()=>{if(cancelled)return;fittedSignature.current=signature;if(width<500&&!area)flow.setViewport({x:Math.max(12,(width-(result.width||650)*.55)/2),y:18,zoom:.55},{duration:300});else flow.fitView({padding:.07,maxZoom:1,duration:300});},80);});
+  }
+ };build().catch(console.error);return()=>{cancelled=true;cancelAnimationFrame(frame);window.clearTimeout(timer);};},[signature,width,height,readOnly]);
  const nodes=useMemo(()=>layout.nodes.map(n=>({...n,selected:n.id===selected,data:{...n.data,focus:board.focus.cardIds.includes(n.id)},className:query&&!`${n.data.title} ${n.data.text||''}`.toLocaleLowerCase().includes(query.toLocaleLowerCase())?'search-dim':''})),[layout.nodes,selected,query,board.focus.cardIds]);
  return <ReactFlow nodes={nodes} edges={layout.edges} nodeTypes={nodeTypes} onNodeClick={(_,node)=>{if(node.data.ghost)onProposal(node.data.suggestionId as string);else onSelect(node.id);}} onPaneClick={()=>onSelect(board.boardId)} fitView minZoom={.15} maxZoom={1.6} nodesDraggable={false} nodesConnectable={false} deleteKeyCode={null} colorMode={theme==='dark'?'dark':'light'} proOptions={{hideAttribution:true}}><Background variant={BackgroundVariant.Dots} gap={22} size={1} color="var(--dot)"/><Controls showInteractive={false}/>{nodes.length>8&&<MiniMap pannable zoomable nodeColor={n=>n.type==='section'?'var(--sage-soft)':'var(--paper)'} maskColor="transparent"/>}<div className="map-legend"><span><Circle size={9} fill="currentColor"/> Confirmado</span>{board.suggestions.some(s=>s.status==='pending'&&s.mapDraft)&&<span className="proposal-legend"><Sparkles size={11}/> Proposta para revisar</span>}</div></ReactFlow>;
 }

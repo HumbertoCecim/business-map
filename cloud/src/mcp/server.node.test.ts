@@ -37,6 +37,17 @@ async function connect(data: ReturnType<typeof fixture>) {
 }
 
 describe('Business Map MCP through the SDK transport', () => {
+  it('publishes the corrected widget version while preserving older conversation resource URIs', async () => {
+    const client = await connect(fixture());
+    const { tools } = await client.listTools();
+    expect(tools.find(tool => tool.name === 'business_show_map')?._meta?.ui).toMatchObject({ resourceUri: 'ui://business-map/map-v2.html' });
+    const current = await client.readResource({ uri: 'ui://business-map/map-v2.html' });
+    const legacy = await client.readResource({ uri: 'ui://business-map/map-v1.html' });
+    expect(current.contents[0]).toMatchObject({ uri: 'ui://business-map/map-v2.html', mimeType: 'text/html;profile=mcp-app' });
+    if (!('text' in current.contents[0])) throw new Error('Expected an HTML widget resource');
+    expect(legacy.contents[0]).toMatchObject({ uri: 'ui://business-map/map-v1.html', text: current.contents[0].text });
+  });
+
   it('publishes strict typed inputs, output schemas and private destructive app tools', async () => {
     const client = await connect(fixture())
     const tools = (await client.listTools()).tools

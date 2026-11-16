@@ -6,8 +6,8 @@ Validado em 15–16/11/2026, com staging Cloudflare e dados sintéticos. Nenhum 
 
 - 27 testes de domínio: SQLite Durable Object, isolamento por dono, CAS concorrente, lotes atômicos, capabilities vinculadas/expiradas/adulteradas, replay, undo, importação determinística, R2 privado de skills/exportações e WebSocket.
 - 13 testes de acesso: D1 com migrações reais, cadastro por senha/social passando pelo mesmo hook de convite, convites revogados/expirados, verificação de e-mail, sessão fresca, CSRF e proxy de consentimento OAuth.
-- 31 testes MCP/OAuth: transportes reais SDK v2, registro, PKCE, consentimento, refresh, audience, revogação, cliente confidencial fixo sem TTL, escopos, metadados ocultos, confirmação e skills apenas textuais. A biblioteca OAuth instalada valida assinaturas ES256 com chaves efêmeras de teste; assinatura inválida, audience/sub incorretos, expiração e replay são recusados.
-- 3 testes do transporte do widget; 8 testes de navegador, incluindo ponte MCP Apps oficial em iframe sob CSP sem rede/eval, tela cheia, confirmação integral, revisão legível com detalhes técnicos opcionais, preservação de rascunho, controles móveis e avisos de remoção apesar de uma justificativa enganosa. O formulário nativo de consentimento preserva Origin sem sobrescrever esse cabeçalho no teste e alcança a origem do callback validado, sem enviar a URL de consentimento como Referer.
+- 32 testes MCP/OAuth: transportes reais SDK v2, registro, PKCE, consentimento, refresh, audience, revogação, cliente confidencial fixo sem TTL, escopos, metadados ocultos, confirmação e skills apenas textuais. A biblioteca OAuth instalada valida assinaturas ES256 com chaves efêmeras de teste; assinatura inválida, audience/sub incorretos, expiração e replay são recusados.
+- 3 testes do transporte do widget; 11 testes de navegador, incluindo ponte MCP Apps oficial em iframe sob CSP sem rede/eval, tela cheia, confirmação integral, revisão legível com detalhes técnicos opcionais, preservação de rascunho, controles móveis e avisos de remoção apesar de uma justificativa enganosa. O formulário nativo de consentimento preserva Origin sem sobrescrever esse cabeçalho no teste e alcança a origem do callback validado, sem enviar a URL de consentimento como Referer.
 - Build de produção e typecheck do Cloud; 125 testes e typecheck da instalação local também passaram.
 - [CI em checkout limpo Ubuntu](https://github.com/HumbertoCecim/business-map/actions/runs/43865013397): instalação com lockfiles, build completo, typecheck, todos os 74 testes Cloud e os oito testes de navegador passaram sem segredos ou SDK Paseo instalados.
 
@@ -22,6 +22,12 @@ Esse cliente de integração usou PKCE público (`none`), também permitido pelo
 Em 16/11/2026, após receber as instruções de OAuth e CIMD, o usuário do piloto confirmou que conectou o plugin, abriu o mapa e passou a conversar com ele dentro do ChatGPT real. Esse relato valida a conexão e a apresentação do mapa no host. A confirmação de um lote e sua persistência após reabertura ainda precisam de verificação pelo participante.
 
 A reprodução em uma cópia limpa Windows teve um resultado diferente: instalação, widget e TypeScript passaram, mas o build completo atingiu o limite de três minutos na transformação do cliente, sem erro de importação. Esse TypeScript também encontrou 22 declarações genéricas de tipos no diretório ancestral. O CI Linux independente acima concluiu o fluxo inteiro; o timeout específico do ensaio Windows permanece registrado, sem causa estabelecida.
+
+## Estabilidade do mapa incorporado — 16/11/2026
+
+O usuário relatou crescimento e movimento espontâneos do mapa no ChatGPT. O harness passou a aplicar ao iframe as notificações reais de tamanho do SDK: antes da correção, o teste reproduziu crescimento de 650 para 1.694px em poucos segundos. A altura inline agora é intrínseca (600px, ou 560px em largura estreita), com borda incluída, detalhes roláveis e expansão de viewport restrita à tela cheia.
+
+Os testes de navegador confirmam que a altura estabiliza, o zoom escolhido persiste após redimensionamento/refresh sem mudanças e o tema escuro funciona em largura estreita, inclusive ao entrar/sair de uma tela cheia curta. Timers de ajustes de enquadramento obsoletos são cancelados. O componente usa `map-v2.html`; o URI antigo continua servindo o HTML corrigido para compatibilidade. A correção foi publicada somente em staging. A confirmação visual dentro da conversa real do usuário ainda está pendente.
 
 ## Fluxo realmente executado na Cloudflare
 

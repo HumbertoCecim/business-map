@@ -140,3 +140,66 @@ test('embedded MCP App uses the official bridge, reviews and confirms in the con
   await expect.poll(() => applied).toBe(true);
   await expect(widget.getByText('Ateliê atualizado', { exact: true })).toBeVisible();
 });
+
+test('embedded map height settles when the host resizes its iframe to the reported content', async ({ page }) => {
+  const state = fixture();
+  await page.route('**/test-tool', route => route.fulfill({ json: { content: [], _meta: { businessMap: { snapshot: state, approvalAvailable: false, capabilities: {} } } } }));
+  await page.goto('/widget-host');
+  const widget = page.frameLocator('#map-frame');
+  await expect(widget.locator('.react-flow__node').first()).toBeVisible();
+  await expect.poll(() => page.locator('#map-frame').evaluate(frame => frame.getBoundingClientRect().height)).toBeLessThanOrEqual(640);
+  const initialHeight = await page.locator('#map-frame').evaluate(frame => frame.getBoundingClientRect().height);
+  const reports = Number(await page.locator('body').getAttribute('data-resize-count'));
+  // Allow multiple observer/animation frames to expose any feedback growth.
+  await page.waitForTimeout(1200);
+  expect(await page.locator('#map-frame').evaluate(frame => frame.getBoundingClientRect().height)).toBe(initialHeight);
+  expect(Number(await page.locator('body').getAttribute('data-resize-count'))).toBeLessThanOrEqual(reports + 1);
+  await expect(widget.locator('.widget-footer')).toBeInViewport();
+});
+
+test('embedded map preserves user zoom through host resizing and unchanged refreshes', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const state = fixture(); let calls = 0;
+  await page.route('**/test-tool', route => { calls++; return route.fulfill({ json: { content: [], _meta: { businessMap: { snapshot: state, approvalAvailable: false, capabilities: {} } } } }); });
+  await page.goto('/widget-host');
+  const widget = page.frameLocator('#map-frame');
+  await expect(widget.locator('.react-flow__node').first()).toBeVisible();
+  await page.waitForTimeout(700);
+  const viewport = widget.locator('.react-flow__viewport');
+  const fitted = await viewport.getAttribute('style');
+  await widget.locator('.react-flow__controls-zoomin').click();
+  await expect(viewport).not.toHaveAttribute('style', fitted!);
+  await page.waitForTimeout(400);
+  const chosen = await viewport.getAttribute('style'), previousCalls = calls;
+  await page.setViewportSize({ width: 1180, height: 820 });
+  await widget.getByRole('button', { name: 'Atualizar mapa' }).click();
+  await expect.poll(() => calls).toBeGreaterThan(previousCalls);
+  await page.waitForTimeout(700);
+  await expect(viewport).toHaveAttribute('style', chosen!);
+  await page.screenshot({ path: test.info().outputPath('embedded-stable-map.png') });
+});
+
+test('embedded mobile map stays bounded in inline and short fullscreen views', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 620 });
+  const state = fixture();
+  await page.route('**/test-tool', route => route.fulfill({ json: { content: [], _meta: { businessMap: { snapshot: state, approvalAvailable: false, capabilities: {} } } } }));
+  await page.goto('/widget-host?theme=dark');
+  const widget = page.frameLocator('#map-frame');
+  await expect(widget.locator('.react-flow__node').first()).toBeVisible();
+  await expect(widget.locator('main')).toHaveAttribute('data-theme', 'dark');
+  await expect(widget.locator('main')).toHaveCSS('height', '560px');
+  await widget.getByRole('button', { name: /Propostas/ }).click();
+  await expect(widget.locator('.widget-detail')).toBeVisible();
+  await expect(widget.locator('.widget-footer')).toBeInViewport();
+  const frame = page.frames().find(frame => frame.url().endsWith('/widget-frame'))!;
+  expect(await frame.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await widget.getByRole('button', { name: 'Abrir mapa em tela cheia' }).click();
+  await expect(page.locator('body')).toHaveAttribute('data-display', 'fullscreen');
+  await expect(widget.locator('main')).toHaveCSS('height', '570px');
+  await expect(widget.locator('.widget-footer')).toBeInViewport();
+  await widget.getByRole('button', { name: 'Voltar ao mapa na conversa' }).click();
+  await expect(widget.locator('main')).toHaveCSS('height', '560px');
+  await page.waitForTimeout(500);
+  expect(await page.locator('#map-frame').evaluate(frame => frame.getBoundingClientRect().height)).toBe(560);
+  await page.screenshot({ path: test.info().outputPath('embedded-mobile-dark.png') });
+});
