@@ -32,7 +32,7 @@ Isso valida a integração Cloudflare/MCP e a interface incorporável. **Não eq
 ## Critérios ainda pendentes
 
 - Configurar transporte de e-mail e remetente verificado antes de admitir participantes. O staging mantém a verificação obrigatória; o cadastro da interface informa indisponibilidade enquanto não há envio.
-- Configurar o conector privado com as credenciais fixas na conta ChatGPT do piloto e validar abrir → propor → confirmar → reencontrar o mapa na conversa real. O acesso de automação ao navegador da máquina não permitiu concluir esse passo.
+- Conectar com OAuth e CIMD, sem copiar credenciais, na conta ChatGPT do piloto e validar abrir → propor → confirmar → reencontrar o mapa na conversa real. O acesso de automação ao navegador da máquina não permitiu concluir esse passo.
 - Acompanhar um participante leigo do convite à retomada.
 
 Staging e produção têm configurações separadas. Produção não é liberada enquanto esses critérios do piloto estiverem pendentes. O script de deploy valida o ambiente e recusa placeholders. Segredos e fixtures de QA ficam fora do Git.

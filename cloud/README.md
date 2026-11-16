@@ -33,7 +33,7 @@ pnpm build:widget
 pnpm dev
 ```
 
-Preencha os segredos locais e um e-mail convidado em `.dev.vars`. Configure também o Worker OAuth privado e seu Service Binding. Consulte [OAuth e cliente fixo](oauth/README.md).
+Preencha os segredos locais e um e-mail convidado em `.dev.vars`. Configure também o Worker OAuth privado e seu Service Binding. Consulte [OAuth e conexão CIMD](oauth/README.md).
 
 ```sh
 pnpm test:business
