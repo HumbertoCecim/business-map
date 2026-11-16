@@ -28,11 +28,12 @@ cd cloud
 pnpm install --frozen-lockfile
 cp wrangler.example.jsonc wrangler.jsonc
 cp .dev.vars.example .dev.vars
+pnpm db:migrate:local
 pnpm build:widget
 pnpm dev
 ```
 
-Configure também o Worker OAuth privado e seu Service Binding. Consulte [OAuth e cliente fixo](oauth/README.md).
+Preencha os segredos locais e um e-mail convidado em `.dev.vars`. Configure também o Worker OAuth privado e seu Service Binding. Consulte [OAuth e cliente fixo](oauth/README.md).
 
 ```sh
 pnpm test:business

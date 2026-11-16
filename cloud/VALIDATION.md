@@ -1,6 +1,6 @@
 ﻿# Validação do piloto Cloud
 
-Validado em 15/11/2026, com staging Cloudflare e dados sintéticos. Nenhum dado do negócio local foi enviado à nuvem.
+Validado em 15–16/11/2026, com staging Cloudflare e dados sintéticos. Nenhum dado do negócio local foi enviado à nuvem.
 
 ## Verificado
 
@@ -9,8 +9,9 @@ Validado em 15/11/2026, com staging Cloudflare e dados sintéticos. Nenhum dado 
 - 20 testes MCP/OAuth: transportes reais SDK v2, registro, PKCE, consentimento, refresh, audience, revogação, cliente confidencial fixo sem TTL, escopos, metadados ocultos, confirmação e skills apenas textuais.
 - 3 testes do transporte do widget; 6 testes de navegador, incluindo ponte MCP Apps oficial em iframe sob CSP sem rede/eval, tela cheia, confirmação integral, revisão legível com detalhes técnicos opcionais, preservação de rascunho, controles móveis e avisos de remoção apesar de uma justificativa enganosa.
 - Build de produção e typecheck do Cloud; 125 testes e typecheck da instalação local também passaram.
+- [CI em checkout limpo Ubuntu](https://github.com/HumbertoCecim/business-map/actions/runs/43795734891): instalação com lockfiles, build completo, typecheck, todos os 63 testes Cloud e os seis testes de navegador passaram sem segredos ou SDK Paseo instalados.
 
-Uma cópia limpa instalou dependências, construiu o widget e passou no TypeScript sem instalar ou compilar pacotes Paseo. O TypeScript ainda encontrou 22 declarações genéricas de tipos no diretório ancestral; portanto, esse ensaio não comprova isolamento completo dos tipos. O build completo dessa cópia foi interrompido no limite de três minutos durante a transformação do cliente, sem erro de importação. O build de produção usado no deploy passou no checkout de desenvolvimento; a reprodução integral a partir de um checkout limpo permanece pendente.
+A reprodução em uma cópia limpa Windows teve um resultado diferente: instalação, widget e TypeScript passaram, mas o build completo atingiu o limite de três minutos na transformação do cliente, sem erro de importação. Esse TypeScript também encontrou 22 declarações genéricas de tipos no diretório ancestral. O CI Linux independente acima concluiu o fluxo inteiro; o timeout específico do ensaio Windows permanece registrado, sem causa estabelecida.
 
 ## Fluxo realmente executado na Cloudflare
 
