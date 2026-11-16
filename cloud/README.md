@@ -6,7 +6,7 @@ Mapa vivo do negócio: edição manual no site, inteligência no seu ChatGPT. Pi
 
 1. Crie sua conta com o e-mail convidado e confirme o e-mail.
 2. Informe o nome do negócio. Crie áreas e notas livremente; skills são opcionais.
-3. Em **Conectar ChatGPT**, copie o endereço `/mcp`. O operador fornece a configuração do cliente OAuth fixo do piloto.
+3. Em **Conectar ChatGPT**, copie o endereço `/mcp` e selecione **OAuth** na autenticação do ChatGPT. O servidor recusa o modo sem autenticação. Para confirmar no próprio ChatGPT, use o Client ID e o Client Secret do conector fixo fornecidos pelo operador; a conexão automática permite consultar/propor e confirmar pelo site. Entre com seu login Business Map e autorize a conexão.
 4. No ChatGPT, peça: “Abra meu mapa e proponha uma estrutura com o contexto que já temos”.
 5. Abra **Propostas**, compare o antes/depois calculado pelo servidor e confirme o lote inteiro. Propostas não alteram o conteúdo antes disso.
 
