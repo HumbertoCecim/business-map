@@ -1,0 +1,115 @@
+import { betterAuth } from 'better-auth'
+import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { admin, captcha } from 'better-auth/plugins'
+import { tanstackStartCookies } from 'better-auth/tanstack-start'
+import type { DB } from '@/db/client'
+import * as schema from './auth.schema'
+import { sendEmail } from '@/features/email/email.server'
+import { negotiateLocale, defaultLocale, type Locale } from '@/features/i18n/locale'
+import { isAdminEmail } from '@/features/admin/is-admin'
+import { APIError } from 'better-auth/api'
+import { hasPilotInvite } from '@/features/pilot/pilot.server'
+
+export interface AuthEnv {
+  BETTER_AUTH_SECRET: string
+  BETTER_AUTH_URL: string
+  GOOGLE_CLIENT_ID?: string
+  GOOGLE_CLIENT_SECRET?: string
+  GITHUB_CLIENT_ID?: string
+  GITHUB_CLIENT_SECRET?: string
+  ADMIN_EMAILS?: string
+  TURNSTILE_SECRET_KEY?: string
+  RESEND_API_KEY?: string
+  PILOT_INVITE_EMAILS?: string
+  PILOT_REQUIRE_EMAIL_VERIFICATION?: string
+}
+
+/** Derive the user's preferred locale from an incoming Better-Auth hook request. */
+function localeFromRequest(request?: Request): Locale {
+  if (!request) return defaultLocale
+  const cookieHeader = request.headers.get('cookie') ?? ''
+  const cookieLocale = cookieHeader
+    .split(';')
+    .map((c) => c.trim())
+    .find((c) => c.startsWith('locale='))
+    ?.split('=')[1]
+  const acceptLanguage = request.headers.get('accept-language')
+  return negotiateLocale(cookieLocale, acceptLanguage)
+}
+
+function socialProviders(e: AuthEnv) {
+  const p: Record<string, { clientId: string; clientSecret: string }> = {}
+  if (e.GOOGLE_CLIENT_ID && e.GOOGLE_CLIENT_SECRET)
+    p.google = { clientId: e.GOOGLE_CLIENT_ID, clientSecret: e.GOOGLE_CLIENT_SECRET }
+  if (e.GITHUB_CLIENT_ID && e.GITHUB_CLIENT_SECRET)
+    p.github = { clientId: e.GITHUB_CLIENT_ID, clientSecret: e.GITHUB_CLIENT_SECRET }
+  return p
+}
+
+export function createAuth(authEnv: AuthEnv, db: DB) {
+  return betterAuth({
+    secret: authEnv.BETTER_AUTH_SECRET,
+    baseURL: authEnv.BETTER_AUTH_URL,
+    database: drizzleAdapter(db, { provider: 'sqlite', schema }),
+    emailAndPassword: {
+      enabled: true,
+      // Fail closed: invited accounts still need verified email.
+      requireEmailVerification: authEnv.PILOT_REQUIRE_EMAIL_VERIFICATION !== 'false',
+      sendResetPassword: async ({ user, url }, request) => {
+        const locale = localeFromRequest(request)
+        await sendEmail({ to: user.email, locale, template: 'reset-password', data: { url } })
+      },
+    },
+    emailVerification: {
+      sendOnSignUp: true,
+      sendVerificationEmail: async ({ user, url }, request) => {
+        const locale = localeFromRequest(request)
+        await sendEmail({ to: user.email, locale, template: 'verify-email', data: { url } })
+      },
+    },
+    session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
+    // Per-IP rate limiting on auth endpoints. Built-in rules already throttle
+    // sign-in/sign-up (3/10s) and send-verification/password-reset (3/60s).
+    // On Workers: memory storage is per-isolate (useless), so persist in D1;
+    // and the trusted client IP is cf-connecting-ip, not x-forwarded-for.
+    rateLimit: { enabled: true, storage: 'database' },
+    advanced: { ipAddress: { ipAddressHeaders: ['cf-connecting-ip'] } },
+    socialProviders: socialProviders(authEnv),
+    // Auto-link a social login to an existing account with the same email, but
+    // only for providers that return a *verified* email (GitHub, Google). This
+    // lets someone who first signed up with email/password also log in via
+    // GitHub instead of hitting "account not linked". Untrusted providers still
+    // require explicit linking, so an unverified email can't take over an account.
+    account: {
+      accountLinking: {
+        enabled: true,
+        trustedProviders: ['github', 'google'],
+      },
+    },
+    // This pilot has no billing provider or paid subscriptions.
+    user: { deleteUser: { enabled: true } },
+    databaseHooks: {
+      user: {
+        create: {
+          before: async (user) => {
+            if (!await hasPilotInvite(db, user.email, authEnv)) {
+              throw new APIError('FORBIDDEN', { message: 'Este piloto funciona por convite. Solicite acesso ao responsável pelo Business Map.' })
+            }
+            return { data: { ...user, role: isAdminEmail(user.email, authEnv.ADMIN_EMAILS) ? 'admin' : 'user' } }
+          },
+        },
+      },
+    },
+    // Bot protection on sign-up/sign-in/password-reset — only when a secret key
+    // is configured, so blank env degrades gracefully (no captcha, like OAuth).
+    plugins: [
+      admin(),
+      tanstackStartCookies(),
+      ...(authEnv.TURNSTILE_SECRET_KEY
+        ? [captcha({ provider: 'cloudflare-turnstile', secretKey: authEnv.TURNSTILE_SECRET_KEY })]
+        : []),
+    ],
+  })
+}
+
+export type Auth = ReturnType<typeof createAuth>

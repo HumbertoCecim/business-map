@@ -1,0 +1,5 @@
+.wrangler/
+.dry-run/
+.credentials/
+bootstrap/.bootstrap.config.json
+bootstrap/.dev.vars

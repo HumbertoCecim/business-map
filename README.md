@@ -1,5 +1,7 @@
 # Business Map
 
+O piloto SaaS **Business Map Cloud** fica em [cloud/](cloud/README.md): mapa no site e propostas pelo ChatGPT via MCP. Ele é independente da instalação local descrita abaixo; não sincroniza seus dados automaticamente.
+
 Um mapa local do negócio, construído por você e pelos agentes que já usa. Converse, conecte ideias, registre fontes e revise propostas antes de incorporá-las. Áreas e cards são livres; nenhuma metodologia é obrigatória. Funciona no navegador sem Paseo.
 
 ![Business Map com negócio fictício, áreas, conexões e propostas em revisão](docs/screenshots/business-map-light.png)

@@ -1,0 +1,18 @@
+﻿# Local development only: independent random values, >=32 characters.
+BETTER_AUTH_SECRET=replace-with-independent-random-auth-secret
+APPROVAL_SECRET=replace-with-independent-random-approval-secret
+BETTER_AUTH_URL=http://localhost:3000
+PUBLIC_APP_URL=http://localhost:3000
+PILOT_REQUIRE_EMAIL_VERIFICATION=true
+# Bootstrap only; real invites go in D1. Explicit revocation wins.
+PILOT_INVITE_EMAILS=
+ADMIN_EMAILS=
+# Configure a verified sender before inviting participants.
+RESEND_API_KEY=
+EMAIL_FROM=Business Map <verified-sender@example.com>
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+# Identical fixed connector client ID allowlist in both Workers.
+APPROVED_CHATGPT_CLIENT_IDS=[]
