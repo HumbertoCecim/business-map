@@ -6,11 +6,12 @@ import { BusinessMap } from '../src/features/business/components/BusinessMap';
 import { ProposalReview } from '../src/features/business/components/ProposalReview';
 import type { Snapshot } from '../src/features/business/api';
 import { createWidgetTransport } from './transport';
+import { bindWidgetSizing, WIDGET_VERSION } from './sizing';
 import '@xyflow/react/dist/style.css';
 import '../src/features/business/business.css';
 import './widget.css';
 
-const app = new App({ name: 'Business Map', version: '1.0.0' }, { availableDisplayModes: ['inline', 'fullscreen'] });
+const app = new App({ name: 'Business Map', version: WIDGET_VERSION }, { availableDisplayModes: ['inline', 'fullscreen'] }, { autoResize: false });
 const transport = createWidgetTransport(app);
 function Widget() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null), [error, setError] = useState(''), [busy, setBusy] = useState(false);
@@ -24,11 +25,11 @@ function Widget() {
     const host = () => { const context = app.getHostContext(); setTheme(context?.theme || 'light'); setFullscreen(context?.displayMode === 'fullscreen'); setCanFullscreen(context?.availableDisplayModes?.includes('fullscreen') || false); };
     app.ontoolresult = result => { try { transport.accept(result); } catch { void refresh(); } };
     app.onhostcontextchanged = host;
-    let disposed = false;
-    app.connect().then(() => { if (!disposed) { host(); void refresh(); } }).catch(() => { if (!disposed) setError('Não foi possível conectar ao ChatGPT. Abra o mapa novamente na conversa.'); });
+    let disposed = false, stopSizing: (() => void) | undefined;
+    app.connect().then(() => { if (!disposed) { stopSizing = bindWidgetSizing(app); host(); void refresh(); } }).catch(() => { if (!disposed) setError('Não foi possível conectar ao ChatGPT. Abra o mapa novamente na conversa.'); });
     const visible = () => { if (!document.hidden) void refresh(); };
     const poll = setInterval(visible, 15000); document.addEventListener('visibilitychange', visible);
-    return () => { disposed = true; unsubscribe(); clearInterval(poll); document.removeEventListener('visibilitychange', visible); transport.dispose(); void app.close(); };
+    return () => { disposed = true; stopSizing?.(); unsubscribe(); clearInterval(poll); document.removeEventListener('visibilitychange', visible); transport.dispose(); void app.close(); };
   }, [refresh]);
   const task = async (fn: () => Promise<void>) => { setBusy(true); setError(''); try { await fn(); } catch (reason) { setError(reason instanceof Error ? reason.message : 'Não foi possível concluir a ação.'); } finally { setBusy(false); } };
   const pending = snapshot?.proposals.filter(proposal => proposal.status === 'pending') || [];
@@ -42,7 +43,7 @@ function Widget() {
         {(proposalId || selected || showProposals) && <aside className="widget-detail"><button className="icon-button widget-close" aria-label="Fechar detalhe" onClick={() => { setSelected(''); setShowProposals(false); closeReview(); }}><X size={16}/></button>
           {proposalId ? <ProposalReview key={`${proposalId}:${snapshot.board.revision}`} proposalId={proposalId} approvalAvailable={approvalAvailable} load={loadPreview} confirm={preview => task(async () => { await transport.resolve(preview, 'apply'); closeReview(); })} reject={preview => task(async () => { await transport.resolve(preview, 'reject'); closeReview(); })}/> : showProposals ? <><span className="eyebrow">PARA SUA REVISÃO</span><h2>Possibilidades em aberto.</h2>{pending.map(proposal => <button className="proposal-summary" key={proposal.id} onClick={() => setProposalId(proposal.id)}><Sparkles size={16}/><div><h3>{proposal.title}</h3><p>{proposal.commands.length} alterações</p></div></button>)}{!pending.length && <p className="muted">Nenhuma proposta aguardando confirmação.</p>}</> : <><span className="eyebrow">{section ? 'ÁREA DO NEGÓCIO' : 'NOTA CONFIRMADA'}</span><h2>{section?.title || card?.title || snapshot.board.title}</h2><p className="widget-content">{section?.questions || card?.text || snapshot.board.whereStopped || 'Selecione uma área ou nota para explorar.'}</p>{card?.firstStep && <div className="focus-first">Primeiro passo: {card.firstStep}</div>}{section && <div className="detail-note-list">{section.cards.filter(c => !query || `${c.title} ${c.text}`.toLowerCase().includes(query.toLowerCase())).map(c => <button key={c.id} onClick={() => setSelected(c.id)}>{c.title}</button>)}</div>}{card?.sourceIds?.length ? <><h3>Fontes vinculadas</h3>{snapshot.board.sources?.filter(source => card.sourceIds?.includes(source.id)).map(source => <details key={source.id}><summary>{source.label}</summary><p className="widget-content">{source.text}</p>{source.url && safeURL(source.url) && <a href={safeURL(source.url)} target="_blank" rel="noreferrer">Abrir fonte</a>}</details>)}</> : null}<p className="small muted">Para editar manualmente, use o site Business Map. Para propor alterações, continue a conversa no ChatGPT.</p></>}
         </aside>}
-      </div><footer className="widget-footer"><span>Conteúdo confirmado no seu negócio</span><span>Propostas só entram após sua confirmação</span></footer>
+      </div><footer className="widget-footer"><span>Mapa confirmado · <span title="Versão da interface para suporte">v{WIDGET_VERSION}</span></span><span>Propostas só entram após sua confirmação</span></footer>
     </>}
   </main>;
 }

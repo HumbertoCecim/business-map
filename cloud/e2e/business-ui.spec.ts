@@ -123,6 +123,7 @@ test('embedded MCP App uses the official bridge, reviews and confirms in the con
   });
   await page.goto('/widget-host'); const widget = page.frameLocator('#map-frame');
   await expect(widget.getByText('Ateliê de teste', { exact: true })).toBeVisible();
+  await expect(widget.getByText('v0.1.2', { exact: true })).toBeVisible();
   await expect(widget.locator('.react-flow')).toBeVisible();
   await expect(widget.locator('.react-flow__node').first()).toBeVisible();
   await page.screenshot({ path: test.info().outputPath('embedded-map.png') });
@@ -150,6 +151,11 @@ test('embedded map height settles when the host resizes its iframe to the report
   await expect.poll(() => page.locator('#map-frame').evaluate(frame => frame.getBoundingClientRect().height)).toBeLessThanOrEqual(640);
   const initialHeight = await page.locator('#map-frame').evaluate(frame => frame.getBoundingClientRect().height);
   const reports = Number(await page.locator('body').getAttribute('data-resize-count'));
+  // Chat hosts can add document-level styles outside our component. Even a
+  // viewport-sized body must not feed another height measurement to the host.
+  await page.frames().find(frame => frame.url().endsWith('/widget-frame'))!.evaluate(() => {
+    document.body.style.minHeight = '100vh'; document.body.style.paddingBottom = '20px';
+  });
   // Allow multiple observer/animation frames to expose any feedback growth.
   await page.waitForTimeout(1200);
   expect(await page.locator('#map-frame').evaluate(frame => frame.getBoundingClientRect().height)).toBe(initialHeight);
