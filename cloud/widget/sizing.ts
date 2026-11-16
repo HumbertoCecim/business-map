@@ -1,6 +1,6 @@
 import type { App } from '@modelcontextprotocol/ext-apps';
 
-export const WIDGET_VERSION = '0.1.2';
+export const WIDGET_VERSION = '0.2.0';
 
 /** Report our inline design height, never a measurement of a host-controlled document. */
 export function bindWidgetSizing(app: Pick<App, 'getHostContext' | 'sendSizeChanged' | 'addEventListener' | 'removeEventListener'>) {

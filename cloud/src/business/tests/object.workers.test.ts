@@ -33,6 +33,31 @@ async function fresh() {
 const proposalInput = (baseRevision = 0, commands: ChangeCommand[] = [{ type: 'title', title: 'Proposed' }]) => ({ operationId: crypto.randomUUID(), baseRevision, title: 'Suggested change', rationale: 'Evidence', commands })
 
 describe('actual SQLite Durable Object business writer', () => {
+  test('hierarchy proposals require approval, reject invalid writes atomically, and restore cascade deletion through undo', async () => {
+    const { stub, actor, chatgpt } = await fresh()
+    const root = { id: 'root-area', title: 'Custom area', questions: '', cards: [{ id: 'focus-card', title: 'Focus', text: '', firstStep: '', lane: 'later' as const, done: false, important: false, urgent: false }] }
+    const child = { id: 'child-area', parentId: 'focus-card', title: 'Custom detail', questions: '', cards: [] }
+    const proposal = await stub.propose(chatgpt, proposalInput(0, [{ type: 'section.save', section: root }, { type: 'section.save', section: child }]))
+    expect((await stub.getSnapshot(actor)).board.sections).toEqual([])
+    expect((await stub.preview(chatgpt, proposal.id)).after?.sections[1].parentId).toBe('focus-card')
+    await rejected(stub, instance => instance.apply(chatgpt, { operationId: crypto.randomUUID(), proposalId: proposal.id }), 'FORBIDDEN')
+    const approval = await stub.issueApproval(chatgpt, { action: 'apply', proposalId: proposal.id })
+    await stub.apply(chatgpt, { operationId: crypto.randomUUID(), proposalId: proposal.id, capability: approval.capability })
+    await rejected(stub, instance => instance.manualCommand(actor, {
+      operationId: crypto.randomUUID(), baseRevision: 1,
+      commands: [{ type: 'title', title: 'Must not persist' }, { type: 'section.save', section: { ...root, parentId: child.id } }],
+    }), 'ciclo')
+    expect((await stub.getSnapshot(actor)).board.title).toBe('Original')
+    const deleted = await stub.manualCommand(actor, { operationId: crypto.randomUUID(), baseRevision: 1, commands: [{ type: 'card.delete', id: 'focus-card' }] })
+    expect((await stub.getSnapshot(actor)).board.sections.map(section => section.id)).toEqual(['root-area'])
+    await stub.undo(actor, { operationId: crypto.randomUUID(), transactionId: deleted.transactionId!, baseRevision: 2 })
+    const restored = (await stub.getSnapshot(actor)).board
+    expect(restored.revision).toBe(3)
+    expect(restored.sections).toEqual([root, child])
+    await rejected(stub, instance => instance.manualCommand(actor, { operationId: crypto.randomUUID(), baseRevision: 2, commands: [{ type: 'section.delete', id: root.id }] }), 'CONFLICT')
+    const exported = await stub.exportBoard(actor, { format: 'json' })
+    expect(JSON.parse(exported.content).sections[1].parentId).toBe('focus-card')
+  })
   test('binds immutable owner and business at initialization and rejects confused-deputy access', async () => {
     const { stub, actor } = await fresh()
     await rejected(stub, instance => instance.getSnapshot({ ...actor, userId: 'intruder' }), 'FORBIDDEN')

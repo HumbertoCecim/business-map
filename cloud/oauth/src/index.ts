@@ -67,7 +67,7 @@ async function authorize(request: Request, env: OAuthEnv, api: OAuthHelpers) {
   const userId = request.headers.get('x-business-user-id')
   const email = request.headers.get('x-business-user-email') ?? ''
   const oauthGeneration = request.headers.get('x-business-oauth-generation')
-  if (!userId || userId.includes(':') || userId.length > 256 || !oauthGeneration || oauthGeneration.length < 8 || oauthGeneration.length > 200) return page('<h1>Sessão necessária</h1><p>Entre no Business Map e tente conectar novamente.</p>', undefined, 401)
+  if (!userId || userId.includes(':') || userId.length > 256 || !oauthGeneration || oauthGeneration.length < 8 || oauthGeneration.length > 200) return page('<h1>Sessão necessária</h1><p>Entre no GrowYourPlan e tente conectar novamente.</p>', undefined, 401)
   if (request.method === 'GET') {
     const authRequest = await api.parseAuthRequest(request)
     requirePkce(authRequest, env)
@@ -77,7 +77,7 @@ async function authorize(request: Request, env: OAuthEnv, api: OAuthHelpers) {
     if (!scope.includes('business:read')) return page('<h1>Permissão necessária</h1><p>O conector deve solicitar business:read.</p>', undefined, 400)
     const transaction = await api.beginConsent(authRequest)
     await env.OAUTH_KV.put(await consentKey(transaction.handle), JSON.stringify({ userId, scope, oauthGeneration }), { expirationTtl: 600 })
-    return page(`<h1>Conectar seu mapa</h1><p>Você está conectado como <strong>${escapeHtml(email || userId)}</strong>.</p><p>Aplicativo: <strong>${escapeHtml(description.clientName)}</strong> <small>(nome informado pelo cliente)</small></p><p>ID do cliente: <code>${escapeHtml(authRequest.clientId)}</code></p><p>Destino da autorização: <code>${escapeHtml(description.redirectHost)}</code></p><p>Permissões:</p><ul>${scope.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul><p>${approved ? 'Este cliente foi aprovado para exibir a confirmação no ChatGPT. Alterações exigem seu clique no mapa.' : 'Este cliente pode consultar e propor. Confirme alterações no site do Business Map.'}</p><p>Você pode revogar a conexão a qualquer momento no site.</p><form method="post" action="/authorize"><input type="hidden" name="handle" value="${escapeHtml(transaction.handle)}"><button name="decision" value="approve" type="submit">Autorizar conexão</button><button name="decision" value="deny" type="submit">Cancelar</button></form>`, transaction.headers, 200, description.redirectUri)
+    return page(`<h1>Conectar seu mapa</h1><p>Você está conectado como <strong>${escapeHtml(email || userId)}</strong>.</p><p>Aplicativo: <strong>${escapeHtml(description.clientName)}</strong> <small>(nome informado pelo cliente)</small></p><p>ID do cliente: <code>${escapeHtml(authRequest.clientId)}</code></p><p>Destino da autorização: <code>${escapeHtml(description.redirectHost)}</code></p><p>Permissões:</p><ul>${scope.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul><p>${approved ? 'Este cliente foi aprovado para exibir a confirmação no ChatGPT. Alterações exigem seu clique no mapa.' : 'Este cliente pode consultar e propor. Confirme alterações no site do GrowYourPlan.'}</p><p>Você pode revogar a conexão a qualquer momento no site.</p><form method="post" action="/authorize"><input type="hidden" name="handle" value="${escapeHtml(transaction.handle)}"><button name="decision" value="approve" type="submit">Autorizar conexão</button><button name="decision" value="deny" type="submit">Cancelar</button></form>`, transaction.headers, 200, description.redirectUri)
   }
   if (request.method !== 'POST') return new Response('Method not allowed', { status: 405, headers: { Allow: 'GET, POST' } })
   if (request.headers.get('origin') !== new URL(env.OAUTH_ISSUER).origin) return page('<h1>Origem inválida</h1>', undefined, 403)
@@ -97,7 +97,7 @@ async function authorize(request: Request, env: OAuthEnv, api: OAuthHelpers) {
   const approved = await api.approveConsent(request, handle, { scope: saved.scope })
   requirePkce(approved.request, env)
   await env.OAUTH_KV.delete(key)
-  const result = await api.completeAuthorization({ request: approved.request, userId, scope: saved.scope, props: { userId, oauthGeneration, authorizedAt: Date.now() }, metadata: { application: 'Business Map', email }, revokeExistingGrants: true })
+  const result = await api.completeAuthorization({ request: approved.request, userId, scope: saved.scope, props: { userId, oauthGeneration, authorizedAt: Date.now() }, metadata: { application: 'GrowYourPlan', email }, revokeExistingGrants: true })
   approved.headers.set('Location', result.redirectTo)
   approved.headers.set('Cache-Control', 'no-store')
   return new Response(null, { status: 303, headers: approved.headers })

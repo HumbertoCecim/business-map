@@ -1,7 +1,7 @@
 import type { Dict } from './en'
 
 export const zh: Dict = {
-  common: { appName: 'FlareStarter', toggleTheme: '切换主题', language: '语言' },
+  common: { appName: 'GrowYourPlan', toggleTheme: '切换主题', language: '语言' },
   home: {
     title: '在边缘部署你的 SaaS',
     greeting: '你好，{name}！',

@@ -38,7 +38,7 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
   // Dynamic import keeps cloudflare:workers out of the module graph in node/test environments.
   const { env } = await import('@/lib/env')
   const apiKey = env.RESEND_API_KEY
-  const from = env.EMAIL_FROM || 'Business Map <onboarding@resend.dev>'
+  const from = env.EMAIL_FROM || 'GrowYourPlan <onboarding@resend.dev>'
   // Published pilots without mail stay closed. Never log a recipient or link
   // through the development transport; the site exposes the delivery status.
   if (!apiKey && import.meta.env.PROD) return

@@ -37,13 +37,30 @@ async function connect(data: ReturnType<typeof fixture>) {
 }
 
 describe('Business Map MCP through the SDK transport', () => {
+  it('exposes hierarchy, searches ancestor paths and opens only nodes of the current business', async () => {
+    const data = fixture(), board = data.snapshot.board;
+    board.sections = [
+      { id: 'clients', title: 'Clientes', questions: '', cards: [{ id: 'audience', title: 'Primeiro público', text: 'Quem paga?', firstStep: '', lane: 'later', done: false, important: false, urgent: false }] },
+      { id: 'research', parentId: 'audience', title: 'Pesquisa', questions: '', cards: [] },
+    ];
+    const client = await connect(data);
+    const context = await client.callTool({ name: 'business_get_context', arguments: {} });
+    expect(context.structuredContent).toMatchObject({ hierarchy: { rootId: board.boardId, maxDepth: 5 } });
+    const query = await client.callTool({ name: 'business_query', arguments: { text: 'Pesquisa', limit: 10 } });
+    expect(query.structuredContent).toMatchObject({ matches: [{ id: 'research', parentId: 'audience', depth: 4, path: [board.title, 'Clientes', 'Primeiro público', 'Pesquisa'] }] });
+    const opened = await client.callTool({ name: 'business_show_map', arguments: { focusId: 'research' } });
+    expect(opened._meta).toMatchObject({ businessMap: { focusId: 'research' } });
+    const rejected = await client.callTool({ name: 'business_show_map', arguments: { focusId: 'another-business-node' } });
+    expect(rejected.isError).toBe(true);
+    expect(rejected._meta?.businessMap).toBeUndefined();
+  });
   it('publishes the corrected widget version while preserving older conversation resource URIs', async () => {
     const client = await connect(fixture());
     const { tools } = await client.listTools();
-    expect(tools.find(tool => tool.name === 'business_show_map')?._meta?.ui).toMatchObject({ resourceUri: 'ui://business-map/map-v3.html' });
-    const current = await client.readResource({ uri: 'ui://business-map/map-v3.html' });
+    expect(tools.find(tool => tool.name === 'business_show_map')?._meta?.ui).toMatchObject({ resourceUri: 'ui://business-map/map-v4.html' });
+    const current = await client.readResource({ uri: 'ui://business-map/map-v4.html' });
     const legacy = await client.readResource({ uri: 'ui://business-map/map-v1.html' });
-    expect(current.contents[0]).toMatchObject({ uri: 'ui://business-map/map-v3.html', mimeType: 'text/html;profile=mcp-app' });
+    expect(current.contents[0]).toMatchObject({ uri: 'ui://business-map/map-v4.html', mimeType: 'text/html;profile=mcp-app' });
     if (!('text' in current.contents[0])) throw new Error('Expected an HTML widget resource');
     expect(legacy.contents[0]).toMatchObject({ uri: 'ui://business-map/map-v1.html', text: current.contents[0].text });
     const previous = await client.readResource({ uri: 'ui://business-map/map-v2.html' });

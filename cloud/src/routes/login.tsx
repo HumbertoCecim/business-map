@@ -6,7 +6,7 @@ import { safeReturnTo } from '@/features/pilot/access'
 import '@/features/business/business.css'
 
 export const Route = createFileRoute('/login')({
-  head: () => ({ meta: [{ title: 'Entrar · Business Map' }, { name: 'robots', content: 'noindex,nofollow' }] }),
+  head: () => ({ meta: [{ title: 'Entrar · GrowYourPlan' }, { name: 'robots', content: 'noindex,nofollow' }] }),
   component: Login,
 })
 function Login() {
@@ -37,7 +37,7 @@ function Login() {
     finally { setBusy(false) }
   }
   return <main className="business-cloud startup" data-theme="light" style={{ minHeight: '100dvh', padding: '32px 20px' }}>
-    <div className="brand"><Map size={27}/><span>business<span className="brand-second">map</span></span><span className="brand-beta">CLOUD</span></div>
+    <div className="brand"><Map size={27}/><span>Grow<span className="brand-second">YourPlan</span></span></div>
     <form className="cloud-onboarding" onSubmit={submit} style={{ width: 'min(420px,100%)' }}>
       <div className="eyebrow">UM ESPAÇO PARA ENXERGAR MAIS LONGE</div>
       <h1>{mode === 'register' ? 'Seu negócio merece perspectiva.' : mode === 'reset' ? 'Vamos recuperar seu acesso.' : 'Bom ter você por aqui.'}</h1>

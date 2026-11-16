@@ -1,7 +1,7 @@
 import type { App } from '@modelcontextprotocol/ext-apps';
 import type { ProposalPreview, Snapshot } from '../src/features/business/api';
 
-type HiddenState = { snapshot: Snapshot; proposalPreview?: ProposalPreview; approvalAvailable?: boolean; capabilities?: { apply?: string; reject?: string; undo?: string } };
+type HiddenState = { snapshot: Snapshot; focusId?: string; proposalPreview?: ProposalPreview; approvalAvailable?: boolean; capabilities?: { apply?: string; reject?: string; undo?: string } };
 type ToolResult = { isError?: boolean; _meta?: Record<string, unknown>; [key: string]: unknown };
 /** The approval capabilities live only in this closure. No model context, URL, storage, logs or widget state. */
 export function createWidgetTransport(app: Pick<App, 'callServerTool'>) {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getSubtreeIds, validateHierarchy } from "./hierarchy";
 import {
   candidateFields,
   sessionSchema,
@@ -27,12 +28,13 @@ export const cardSchema = z.object({
 });
 export const sectionSchema = z.object({
   id,
+  parentId: id.optional(),
   sourceSuggestionId: id.optional(),
   title: short,
   questions: text,
   cards: z.array(cardSchema).max(500),
 });
-export const structureItemSchema = z.object({ title: short, questions: text });
+export const structureItemSchema = z.object({ title: short, questions: text, parentId: id.optional() });
 export const relationSchema = z.object({ id, fromId: id, toId: id, label: short });
 export const sourceSchema = z.object({
   id, kind: z.enum(["founder_statement", "github_issue", "log_excerpt", "url", "note"]),
@@ -133,6 +135,7 @@ export function parseBoard(raw: unknown): Board {
   return board;
 }
 export function validateBoardIntegrity(board: Board) {
+  validateHierarchy(board);
   const unique = (values: string[]) => { if (new Set(values).size !== values.length) throw new Error("Duplicate IDs in board."); };
   const nodes = board.sections.flatMap(s => [s.id, ...s.cards.map(c => c.id)]);
   unique(nodes); unique(board.suggestions.map(s => s.id)); unique((board.sources || []).map(s => s.id)); unique((board.relations || []).map(r => r.id));
@@ -401,10 +404,12 @@ export function reduceBoard(board: Board, raw: Command): Board {
       else b.sections[i] = { ...saved, cards: b.sections[i].cards };
       break;
     }
-    case "section.delete":
+    case "section.delete": {
       section(cmd.id);
-      b.sections = b.sections.filter((s) => s.id !== cmd.id);
+      const removed = getSubtreeIds(b, cmd.id);
+      b.sections = b.sections.filter((s) => !removed.has(s.id));
       break;
+    }
     case "section.move":
       move(b.sections, cmd.id, cmd.direction);
       break;
@@ -424,13 +429,16 @@ export function reduceBoard(board: Board, raw: Command): Board {
       else s.cards[i] = saved;
       break;
     }
-    case "card.delete":
+    case "card.delete": {
       if (!b.sections.some((s) => s.cards.some((c) => c.id === cmd.id)))
         throw new Error("Card não encontrado.");
+      const removed = getSubtreeIds(b, cmd.id);
+      b.sections = b.sections.filter((s) => !removed.has(s.id));
       b.sections.forEach((s) => {
-        s.cards = s.cards.filter((c) => c.id !== cmd.id);
+        s.cards = s.cards.filter((c) => !removed.has(c.id));
       });
       break;
+    }
     case "card.move": {
       const source = b.sections.find((s) =>
         s.cards.some((c) => c.id === cmd.id),

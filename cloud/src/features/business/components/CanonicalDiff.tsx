@@ -6,14 +6,14 @@ const labels: Record<string, string> = {
   whereStopped: 'Onde parei', relations: 'Conexões', sources: 'Fontes', text: 'Conteúdo', rationale: 'Motivo',
   firstStep: 'Primeiro passo', lane: 'Quando', done: 'Concluída', important: 'Importante', urgent: 'Urgente',
   semanticType: 'Tipo de nota', sourceIds: 'Fontes vinculadas', label: 'Nome', kind: 'Tipo', url: 'Endereço da fonte',
-  fromId: 'De', toId: 'Para', target: 'Relacionado a', createdAt: 'Registrado em', skills: 'Skills',
+  parentId: 'Dentro de', fromId: 'De', toId: 'Para', target: 'Relacionado a', createdAt: 'Registrado em', skills: 'Skills',
   selectedSkillVersionIds: 'Skills selecionadas', name: 'Nome', description: 'Descrição', skillText: 'Conteúdo da skill',
   sessions: 'Conversas registradas', objective: 'Objetivo', summary: 'Resumo', startedAt: 'Início', closedAt: 'Encerramento',
   status: 'Situação', agent: 'Assistente', skillsIds: 'Skills selecionadas', endOfConversation: 'Conversa encerrada',
   structure: 'Estrutura', sourceUrl: 'Origem', versionIds: 'Versões selecionadas',
 };
 const technicalFields = new Set(['id', 'boardId', 'schemaVersion', 'revision', 'sourceSuggestionId', 'receipts', 'treeHash', 'skillId', 'parentVersionId', 'originalVersionId', 'currentSessionId', 'requestId']);
-const references = new Set(['cardIds', 'sourceIds', 'selectedSkillVersionIds', 'versionIds', 'fromId', 'toId']);
+const references = new Set(['cardIds', 'sourceIds', 'selectedSkillVersionIds', 'versionIds', 'fromId', 'toId', 'parentId']);
 export function canonicalLabel(path: string) {
   const field = path.split('/').filter(Boolean).at(-1) || '';
   return labels[field] || (field ? field.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_-]/g, ' ').replace(/^./, letter => letter.toUpperCase()) : 'Mapa do negócio');
@@ -36,6 +36,7 @@ function friendlyText(value: string, field: string) {
 }
 /** Human-readable presentation of canonical server values. Exact data remains in technical details. */
 export function CanonicalValue({ value, board, field = '' }: { value: unknown; board: Board; field?: string }) {
+  if (field === 'parentId' && (value === undefined || value === null || value === '')) return <p className="canonical-text">{board.title} · visão da empresa</p>;
   if (value === undefined || value === null || value === '') return <p className="canonical-empty">Não preenchido</p>;
   if (typeof value === 'boolean') return <p className="canonical-text">{value ? 'Sim' : 'Não'}</p>;
   if (typeof value === 'number') return <p className="canonical-text">{value}</p>;

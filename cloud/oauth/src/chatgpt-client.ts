@@ -22,7 +22,7 @@ export async function ensureChatgptClient(api: OAuthHelpers, kv: KVNamespace): P
     return { created: false, clientId: existing.clientId, redirectUris: existing.redirectUris, tokenEndpointAuthMethod: existing.tokenEndpointAuthMethod }
   }
   const client = await api.createClient({
-    clientName: 'Business Map Cloud · ChatGPT piloto',
+    clientName: 'GrowYourPlan · ChatGPT piloto',
     clientUri: 'https://chatgpt.com',
     redirectUris: [CHATGPT_REDIRECT_URI],
     grantTypes: ['authorization_code', 'refresh_token'],

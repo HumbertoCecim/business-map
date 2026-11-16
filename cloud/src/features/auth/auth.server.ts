@@ -93,7 +93,7 @@ export function createAuth(authEnv: AuthEnv, db: DB) {
         create: {
           before: async (user) => {
             if (!await hasPilotInvite(db, user.email, authEnv)) {
-              throw new APIError('FORBIDDEN', { message: 'Este piloto funciona por convite. Solicite acesso ao responsável pelo Business Map.' })
+              throw new APIError('FORBIDDEN', { message: 'Este piloto funciona por convite. Solicite acesso ao responsável pelo GrowYourPlan.' })
             }
             return { data: { ...user, role: isAdminEmail(user.email, authEnv.ADMIN_EMAILS) ? 'admin' : 'user' } }
           },

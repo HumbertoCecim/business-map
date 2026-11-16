@@ -1,4 +1,4 @@
-﻿# Business Map Cloud
+# GrowYourPlan
 
 Mapa vivo do negócio: edição manual no site, inteligência no seu ChatGPT. Piloto por convite, **um negócio por conta**. O site não chama modelos nem cobra por IA.
 
@@ -6,13 +6,25 @@ Mapa vivo do negócio: edição manual no site, inteligência no seu ChatGPT. Pi
 
 1. Crie sua conta com o e-mail convidado e confirme o e-mail.
 2. Informe o nome do negócio. Crie áreas e notas livremente; skills são opcionais.
-3. Em **Conectar ChatGPT**, copie o endereço `/mcp`, selecione **OAuth** e escolha **CIMD** como registro do cliente. A identificação é automática, sem copiar Client ID ou Client Secret. Entre com seu login Business Map e autorize a conexão. O servidor recusa o modo sem autenticação.
+3. Em **Conectar ChatGPT**, copie o endereço `/mcp`, selecione **OAuth** e escolha **CIMD** como registro do cliente. A identificação é automática, sem copiar Client ID ou Client Secret. Entre com seu login GrowYourPlan e autorize a conexão. O servidor recusa o modo sem autenticação.
 4. No ChatGPT, peça: “Abra meu mapa e proponha uma estrutura com o contexto que já temos”.
 5. Abra **Propostas**, compare o antes/depois calculado pelo servidor e confirme o lote inteiro. Propostas não alteram o conteúdo antes disso.
 
 A orientação pede no máximo quatro perguntas iniciais, uma por vez, e permite gerar um rascunho incompleto imediatamente. Também é possível trabalhar sem IA.
 
 **Desfazer** cria uma nova revisão e só desfaz a última transação, preservando mudanças posteriores. No ChatGPT, só desfaz transações do canal ChatGPT; o site também pode desfazer sua edição ou importação mais recente.
+
+## Navegar por níveis
+
+No nível 1, o negócio fica no centro. Use a seta **Explorar** de uma área ou nota para colocá-la no centro; o mapa lateral mostra automaticamente seu nível anterior. O caminho acima permite voltar diretamente à empresa ou a qualquer ancestral. Selecionar um item abre seus detalhes sem mudar o nível.
+
+São até **cinco níveis, contando a empresa e cada área ou nota**. Por exemplo: empresa → clientes → hipótese de público → pesquisa → roteiro. Áreas podem pertencer a outras áreas ou notas; não há estrutura ou metodologia obrigatória. A busca percorre também os ramos fechados.
+
+No site, use **Subárea** ou **Criar aprofundamento** para abrir um ramo. O campo **Dentro de** permite escolher ou mudar sua localização. No nível 5, desenvolva o conteúdo existente ou volte um nível para adicionar itens. Excluir um item também remove todos os seus aprofundamentos; a confirmação informa esse alcance.
+
+No ChatGPT, peça um aprofundamento e revise a proposta antes de confirmar. A ferramenta `business_show_map` aceita `focusId` para abrir um item existente. Propostas criam ancestrais antes dos descendentes, usando `section.parentId`; notas pertencem à sua área. Relações semânticas continuam independentes dessa hierarquia.
+
+Após atualizar o conector no ChatGPT, peça **“Abra meu mapa novamente”**. A versão 0.2.0 usa o recurso `map-v4.html`; conversas antigas continuam resolvendo os recursos anteriores. A altura inline continua limitada, sem observador de redimensionamento do documento.
 
 ## Desenvolvimento
 
@@ -68,7 +80,7 @@ Convites D1: tabela `pilot_invite`, e-mail em minúsculas, `status='active'`, `c
 - `src/features/pilot/`: convites, associação usuário/negócio e API com sessão. O servidor resolve identidade e negócio; argumentos do modelo não os escolhem.
 - `src/mcp/`: Streamable HTTP. Ferramentas públicas `business_get_context`, `business_query`, `business_read_skill`, `business_submit_proposal`, `business_show_map`. Confirmação exige ferramentas exclusivas do componente.
 - `oauth/`: OAuth, PKCE S256, consentimento e audience. Desconectar rotaciona uma geração no D1, invalidando tokens antigos sem depender da propagação do KV.
-- `src/features/business/`: React Flow/ELK, edição manual, conflitos e rascunhos por negócio.
+- `src/features/business/`: React Flow com foco hierárquico, edição manual, conflitos e rascunhos por negócio.
 - `widget/`: MCP App autocontido. Capabilities chegam em `_meta` e ficam somente na memória do transporte.
 
 O site recebe invalidações WebSocket e busca o estado autenticado. O widget atualiza após operações e a cada 15s enquanto visível. Coordenadas são derivadas.

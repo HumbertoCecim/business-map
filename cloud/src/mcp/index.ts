@@ -21,7 +21,7 @@ export interface BusinessMcpOptions<Env extends BusinessMcpEnv> {
 export function createBusinessMcpHandler<Env extends BusinessMcpEnv>(options: BusinessMcpOptions<Env>) {
   return async (request: Request, env: Env, ctx: OAuthResourceContext<ValidatedGrant>): Promise<Response> => {
     const session = await options.resolveSession(request, env, ctx)
-    if (!session) return new Response('Unauthorized', { status: 401, headers: { 'Cache-Control': 'no-store', 'WWW-Authenticate': `Bearer resource_metadata="${options.publicBaseUrl}/.well-known/oauth-protected-resource/mcp", error="invalid_token", error_description="Reconnect your Business Map account"` } })
+    if (!session) return new Response('Unauthorized', { status: 401, headers: { 'Cache-Control': 'no-store', 'WWW-Authenticate': `Bearer resource_metadata="${options.publicBaseUrl}/.well-known/oauth-protected-resource/mcp", error="invalid_token", error_description="Reconnect your GrowYourPlan account"` } })
     const handler = createMcpHandler(() => createBusinessMcpServer({ session, domain: env.BUSINESS_OBJECTS.getByName(session.businessId), widgetHtml: () => options.widgetHtml(request, env), publicBaseUrl: options.publicBaseUrl }), {
       route: '/mcp', corsOptions: false,
       allowedHostnames: [new URL(options.publicBaseUrl).hostname],
@@ -39,7 +39,7 @@ export function createBusinessMcpResource<Env extends BusinessMcpEnv>(options: B
   const base = options.publicBaseUrl.replace(/\/$/, '')
   const handler = createBusinessMcpHandler(options)
   return new OAuthResourceServer<Env, ValidatedGrant>({
-    resourceMetadata: { resource: `${base}/mcp`, authorization_servers: [base], resource_name: 'Business Map Cloud' },
+    resourceMetadata: { resource: `${base}/mcp`, authorization_servers: [base], resource_name: 'GrowYourPlan' },
     // Request the whole pilot workflow at linking time. Enforcement remains per tool;
     // external clients receive only read/propose after consent policy strips approval.
     requiredScopes: ['business:read', 'business:propose', 'business:approve'],

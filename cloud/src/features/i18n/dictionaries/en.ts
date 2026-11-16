@@ -1,5 +1,5 @@
 export const en = {
-  common: { appName: 'FlareStarter', toggleTheme: 'Toggle theme', language: 'Language' },
+  common: { appName: 'GrowYourPlan', toggleTheme: 'Toggle theme', language: 'Language' },
   home: {
     title: 'Ship your SaaS on the edge',
     greeting: 'Hello, {name}!',

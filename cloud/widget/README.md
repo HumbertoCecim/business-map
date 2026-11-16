@@ -1,6 +1,6 @@
-# Business Map MCP App
+# GrowYourPlan MCP App
 
-`node widget/build.mjs` creates `widget/dist/map.html`, the trusted, self-contained React/ReactFlow/ELK app registered at `ui://business-map/map-v3.html`. The former `map-v1.html` and `map-v2.html` URIs remain compatibility aliases serving the corrected widget. Build the widget before the Cloudflare application, which imports that HTML as a raw resource. No model-generated HTML, skill scripts, external fonts, analytics, or content-derived scripts are loaded.
+`node widget/build.mjs` creates `widget/dist/map.html`, the trusted, self-contained React/ReactFlow app registered at `ui://business-map/map-v4.html`. The former `map-v1.html`, `map-v2.html` and `map-v3.html` URIs remain compatibility aliases serving the corrected widget. Build the widget before the Cloudflare application, which imports that HTML as a raw resource. No model-generated HTML, skill scripts, external fonts, analytics, or content-derived scripts are loaded.
 
 The client uses the official [`App` bridge](https://apps.extensions.modelcontextprotocol.io/api/classes/app.App.html). It reads canonical data only from tool result `_meta.businessMap`, requests `business_get_ui_state` on initialization and every 15 seconds while visible, and refreshes after mutations. Fullscreen appears only when advertised by the host.
 

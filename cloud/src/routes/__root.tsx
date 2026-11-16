@@ -12,9 +12,9 @@ export const Route = createRootRoute({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'Business Map · Seu negócio, em perspectiva' },
+      { title: 'GrowYourPlan · Seu negócio, em perspectiva' },
       { name: 'description', content: 'Organize ideias, decisões e próximos passos em um mapa vivo do seu negócio.' },
-      { property: 'og:title', content: 'Business Map' },
+      { property: 'og:title', content: 'GrowYourPlan' },
       { property: 'og:description', content: 'Suas ideias, decisões e próximos passos, no mesmo mapa.' },
       { property: 'og:type', content: 'website' },
     ],

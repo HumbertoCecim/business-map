@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
-import { emptyBoard } from '../../shared/model';
+import { reduceBoard, emptyBoard } from '../../shared/model';
 import type { Snapshot, ProposalPreview } from '../src/features/business/api';
+import { WIDGET_VERSION } from '../widget/sizing';
 
 function fixture(): Snapshot {
   const board = emptyBoard('synthetic-ui-board'); board.title = 'Ateliê de teste'; board.revision = 1;
@@ -80,6 +81,8 @@ test('mobile keeps navigation, search, theme and external connection guidance us
   await expect(page.getByRole('textbox', { name: 'Buscar no mapa' })).toBeVisible();
   await page.getByRole('button', { name: 'Alternar tema' }).last().click();
   await expect(page.locator('.business-cloud.studio')).toHaveAttribute('data-theme', 'dark');
+  await page.getByRole('combobox', { name: 'Escolher área' }).selectOption('area-test');
+  await page.getByRole('combobox', { name: 'Escolher área' }).selectOption('area-test');
   await expect(page.locator('.map-card>p').first()).toHaveCSS('color', 'rgb(150, 158, 144)');
   await page.locator('.cloud-mobile-tools').getByRole('button', { name: 'ChatGPT' }).click();
   await expect(page.getByRole('dialog', { name: 'Conectar ChatGPT' })).toBeVisible();
@@ -92,7 +95,7 @@ test('mobile map controls leave the area new-note button tappable', async ({ pag
   await page.setViewportSize({ width: 390, height: 844 }); const state = fixture(); await intercept(page, () => state);
   await page.goto('/business');
   await page.getByRole('combobox', { name: 'Escolher área' }).selectOption('area-test');
-  const addNote = page.locator('.section-foot').getByRole('button', { name: 'Nova nota', exact: true });
+  const addNote = page.locator('.focus-map-bottom').getByRole('button', { name: 'Nova nota', exact: true });
   await expect(addNote).toBeInViewport({ ratio: 0.99 });
   await expect(page.locator('.react-flow__controls')).toHaveCSS('flex-direction', 'row');
   await expect.poll(async () => addNote.evaluate(button => {
@@ -122,8 +125,8 @@ test('embedded MCP App uses the official bridge, reviews and confirms in the con
     await route.fulfill({ json: { content: [], _meta: { businessMap: { snapshot: state, approvalAvailable: true, ...(reviewing ? { proposalPreview: preview, capabilities: { apply: secret, reject: 'test-only-reject' } } : { capabilities: {} }) } } } });
   });
   await page.goto('/widget-host'); const widget = page.frameLocator('#map-frame');
-  await expect(widget.getByText('Ateliê de teste', { exact: true })).toBeVisible();
-  await expect(widget.getByText('v0.1.2', { exact: true })).toBeVisible();
+  await expect(widget.locator('.widget-brand strong')).toHaveText('Ateliê de teste');
+  await expect(widget.getByText(`v${WIDGET_VERSION}`, { exact: true })).toBeVisible();
   await expect(widget.locator('.react-flow')).toBeVisible();
   await expect(widget.locator('.react-flow__node').first()).toBeVisible();
   await page.screenshot({ path: test.info().outputPath('embedded-map.png') });
@@ -139,7 +142,7 @@ test('embedded MCP App uses the official bridge, reviews and confirms in the con
   expect(storage).not.toContain(secret);
   await widget.getByRole('button', { name: 'Confirmar lote inteiro' }).click();
   await expect.poll(() => applied).toBe(true);
-  await expect(widget.getByText('Ateliê atualizado', { exact: true })).toBeVisible();
+  await expect(widget.locator('.widget-brand strong')).toHaveText('Ateliê atualizado');
 });
 
 test('embedded map height settles when the host resizes its iframe to the reported content', async ({ page }) => {
@@ -182,6 +185,13 @@ test('embedded map preserves user zoom through host resizing and unchanged refre
   await expect.poll(() => calls).toBeGreaterThan(previousCalls);
   await page.waitForTimeout(700);
   await expect(viewport).toHaveAttribute('style', chosen!);
+  const existingPosition = await widget.locator('.react-flow__node[data-id="area-test"]').getAttribute('style');
+  state.board.title = 'Nome atualizado sem mover o mapa'; state.board.revision++;
+  state.board.sections.push({ id: 'new-sibling', title: 'Uma nova área', questions: '', cards: [] });
+  await widget.getByRole('button', { name: 'Atualizar mapa', exact: true }).click();
+  await expect(widget.locator('.widget-brand strong')).toHaveText(state.board.title);
+  await expect(viewport).toHaveAttribute('style', chosen!);
+  await expect(widget.locator('.react-flow__node[data-id="area-test"]')).toHaveAttribute('style', existingPosition!);
   await page.screenshot({ path: test.info().outputPath('embedded-stable-map.png') });
 });
 
@@ -208,4 +218,120 @@ test('embedded mobile map stays bounded in inline and short fullscreen views', a
   await page.waitForTimeout(500);
   expect(await page.locator('#map-frame').evaluate(frame => frame.getBoundingClientRect().height)).toBe(560);
   await page.screenshot({ path: test.info().outputPath('embedded-mobile-dark.png') });
+});
+
+
+function hierarchyFixture(): Snapshot {
+  const state = fixture();
+  state.board.title = 'Ateliê Horizonte';
+  state.board.sections.push(
+    { id: 'offer', title: 'Oferta', questions: 'O que transforma a vida dos clientes?', cards: [] },
+    { id: 'channels', title: 'Canais', questions: 'Como as pessoas chegam até nós?', cards: [] },
+    { id: 'operations', title: 'Operação', questions: 'Como entregar com cuidado?', cards: [] },
+    { id: 'money', title: 'Finanças', questions: 'O que sustenta o negócio?', cards: [] },
+    { id: 'team', title: 'Pessoas', questions: 'Com quem construir?', cards: [] },
+    { id: 'deep-area', parentId: 'card-test', title: 'Plano de entrevistas', questions: 'Aprender antes de investir.', cards: [{ ...state.board.sections[0].cards[0], id: 'deep-note', title: 'Roteiro das conversas', text: 'Perguntar sobre a última experiência de compra.' }] },
+  );
+  return state;
+}
+
+test('navigates five levels with lateral context, breadcrumb jumps and search across branches', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  const state = hierarchyFixture(); await intercept(page, () => state); await page.goto('/business');
+  const map = page.locator('.focus-map'), breadcrumb = page.getByRole('navigation', { name: 'Caminho no mapa' });
+  await expect(map.locator('.react-flow__node')).toHaveCount(7);
+  await expect(map.locator('.focus-level')).toContainText('NÍVEL 1');
+  await page.waitForTimeout(400); await page.screenshot({ path: test.info().outputPath('growyourplan-root-light.png') });
+  await map.getByRole('button', { name: 'Explorar Clientes', exact: true }).click();
+  await expect(map.locator('.focus-level')).toContainText('NÍVEL 2');
+  await expect(page.getByRole('complementary', { name: 'Detalhe selecionado' })).not.toBeVisible();
+  await expect(map.getByRole('button', { name: 'Voltar para Ateliê Horizonte' })).toBeVisible();
+  await map.getByRole('button', { name: 'Explorar Receita recorrente', exact: true }).click();
+  await expect(map.locator('.focus-level')).toContainText('NÍVEL 3');
+  await expect(map.getByRole('button', { name: 'Voltar para Clientes' })).toBeVisible();
+  await map.getByRole('button', { name: 'Explorar Plano de entrevistas', exact: true }).click();
+  await expect(map.locator('.focus-level')).toContainText('NÍVEL 4');
+  await expect(map.getByRole('button', { name: 'Nova nota', exact: true })).toBeVisible();
+  await page.waitForTimeout(350); await page.screenshot({ path: test.info().outputPath('growyourplan-level-four-light.png') });
+  await map.getByRole('button', { name: 'Explorar Roteiro das conversas', exact: true }).click();
+  await expect(map.locator('.focus-level')).toContainText('NÍVEL 5');
+  await expect(map.getByRole('button', { name: /Subárea|Nova nota/ })).toHaveCount(0);
+  await breadcrumb.getByRole('button', { name: 'Clientes', exact: true }).click();
+  await expect(map.locator('.focus-level')).toContainText('NÍVEL 2');
+  await map.getByRole('button', { name: 'Voltar para Ateliê Horizonte' }).click();
+  await expect(map.locator('.focus-level')).toContainText('NÍVEL 1');
+  await page.getByRole('textbox', { name: 'Buscar no mapa' }).fill('Roteiro das conversas');
+  const results = page.getByRole('region', { name: 'Resultados da busca' });
+  await expect(results).toContainText('1 resultado no mapa');
+  await expect(map.locator('[data-id="area-test"]')).not.toHaveClass(/search-dim/);
+  await results.getByRole('button', { name: /Roteiro das conversas/ }).click();
+  await expect(map.locator('.focus-level')).toContainText('NÍVEL 4');
+  await expect(page.getByRole('textbox', { name: 'Título', exact: true })).toHaveValue('Roteiro das conversas');
+  await page.getByRole('button', { name: 'Fechar detalhe', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Buscar no mapa' }).fill('inexistente-xyz');
+  await expect(results).toContainText('Nenhum resultado no mapa');
+  await page.getByRole('textbox', { name: 'Buscar no mapa' }).fill('');
+  await page.getByRole('button', { name: 'Alternar tema' }).first().click();
+  await expect(page.locator('.business-cloud.studio')).toHaveAttribute('data-theme', 'dark');
+  await page.waitForTimeout(350); await page.screenshot({ path: test.info().outputPath('growyourplan-level-four-dark.png') });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(map.getByRole('button', { name: 'Voltar para Receita recorrente' })).toBeVisible();
+  await expect(map.getByRole('button', { name: 'Nova nota', exact: true })).toBeInViewport();
+  await map.locator('.react-flow__controls-fitview').click();
+  await page.waitForTimeout(350);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath('growyourplan-narrow-dark.png') });
+});
+
+test('creates a manual subarea under a note and keeps inspection separate from navigation', async ({ page }) => {
+  let state = hierarchyFixture(); await intercept(page, () => state);
+  const commands: unknown[] = [];
+  await page.route('**/api/business/command', async route => {
+    const body = route.request().postDataJSON(); commands.push(...body.commands);
+    for (const command of body.commands) state = { ...state, board: reduceBoard(state.board, command) };
+    state.fingerprint = `rev${state.board.revision}`; await route.fulfill({ json: state });
+  });
+  await page.goto('/business'); const map = page.locator('.focus-map');
+  await map.getByRole('button', { name: 'Explorar Clientes', exact: true }).click();
+  await map.locator('[data-id="card-test"] h3').click();
+  await expect(page.getByRole('textbox', { name: 'Título', exact: true })).toHaveValue('Receita recorrente');
+  await expect(map.locator('.focus-level')).toContainText('NÍVEL 2');
+  await page.getByRole('button', { name: 'Fechar detalhe', exact: true }).click();
+  await map.getByRole('button', { name: 'Explorar Receita recorrente', exact: true }).click();
+  await map.getByRole('button', { name: 'Subárea', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Nome da área', exact: true }).fill('Experimento do mês');
+  await page.locator('.inspector').getByRole('button', { name: 'Criar área', exact: true }).click();
+  await expect.poll(() => commands.length).toBe(1);
+  expect(commands[0]).toMatchObject({ type: 'section.save', section: { title: 'Experimento do mês', parentId: 'card-test' } });
+  await page.getByRole('button', { name: 'Fechar detalhe', exact: true }).click();
+  await expect(map.getByRole('button', { name: 'Explorar Experimento do mês', exact: true })).toBeVisible();
+});
+
+test('embedded hierarchy uses the same five-level navigation without opening details', async ({ page }) => {
+  const state = hierarchyFixture();
+  await page.route('**/test-tool', route => route.fulfill({ json: { content: [], _meta: { businessMap: { snapshot: state, approvalAvailable: false, capabilities: {} } } } }));
+  await page.goto('/widget-host'); const widget = page.frameLocator('#map-frame');
+  const map = widget.locator('.focus-map');
+  await map.getByRole('button', { name: 'Explorar Clientes', exact: true }).click();
+  await map.getByRole('button', { name: 'Explorar Receita recorrente', exact: true }).click();
+  await map.getByRole('button', { name: 'Explorar Plano de entrevistas', exact: true }).click();
+  await map.getByRole('button', { name: 'Explorar Roteiro das conversas', exact: true }).click();
+  await expect(map.locator('.focus-level')).toContainText('NÍVEL 5');
+  await expect(widget.locator('.widget-detail')).toHaveCount(0);
+  await expect(map.getByRole('button', { name: 'Voltar para Plano de entrevistas' })).toBeVisible();
+  await map.getByRole('navigation', { name: 'Caminho no mapa' }).getByRole('button', { name: 'Ateliê Horizonte', exact: true }).click();
+  await expect(map.locator('.focus-level')).toContainText('NÍVEL 1');
+});
+
+test('falls back to the closest surviving ancestor when the focused branch is deleted externally', async ({ page }) => {
+  let state = hierarchyFixture(); await intercept(page, () => state); await page.goto('/business');
+  const map = page.locator('.focus-map');
+  await map.getByRole('button', { name: 'Explorar Clientes', exact: true }).click();
+  await map.getByRole('button', { name: 'Explorar Receita recorrente', exact: true }).click();
+  await map.getByRole('button', { name: 'Explorar Plano de entrevistas', exact: true }).click();
+  state = { ...state, fingerprint: 'rev2', board: { ...state.board, revision: 2, sections: state.board.sections.filter(section => section.id !== 'deep-area') } };
+  await page.getByRole('button', { name: 'Atualizar mapa', exact: true }).click();
+  await expect(map.locator('.focus-level')).toContainText('NÍVEL 3');
+  await expect(map.locator('.is-hub h3')).toHaveText('Receita recorrente');
+  await expect(map.getByRole('button', { name: 'Voltar para Clientes' })).toBeVisible();
 });
