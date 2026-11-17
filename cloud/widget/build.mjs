@@ -8,6 +8,6 @@ const result = await build({ entryPoints: [resolve(here, 'main.tsx')], bundle: t
 const script = result.outputFiles.find(file => file.path.endsWith('.js')).text;
 const css = result.outputFiles.find(file => file.path.endsWith('.css')).text;
 // Only trusted build outputs are embedded. Business/skill/proposal text is rendered as React text.
-const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GrowYourPlan</title><style>${css.replace(/<\/style/gi, '<\\/style')}</style></head><body><div id="root"></div><script type="module">${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`;
+const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GrowYourPlan</title><style>${css.replace(/<\/style/gi, '<\\/style')}</style></head><body><div id="root"></div><script type="module">${script.replace(/<\/script/gi, '<\\/script')}</script></body></html>`;
 await writeFile(resolve(here, 'dist/map.html'), html);
 await readFile(resolve(here, 'dist/map.html')); // Fail the build if the deliverable was not written.

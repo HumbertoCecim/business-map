@@ -101,3 +101,306 @@
 @media(max-width:1100px){.business-cloud .focus-context{width:132px;padding:22px 10px}.business-cloud .focus-context>.eyebrow{font-size:6px}.business-cloud .focus-breadcrumb button{max-width:105px}}
 @media(max-width:700px){.business-cloud .focus-map-top{padding:0 10px;height:41px;gap:5px}.business-cloud .focus-breadcrumb button{max-width:100px;font-size:9px;padding:4px 5px}.business-cloud .focus-level{font-size:7px;letter-spacing:.5px}.business-cloud .focus-map-body{flex-direction:column}.business-cloud .focus-context{width:100%;height:39px;padding:0 12px;flex-direction:row;align-items:center;border-right:0;border-bottom:1px solid var(--border);background:var(--paper)}.business-cloud .focus-context>.eyebrow,.business-cloud .context-position,.business-cloud .focus-context-map>svg,.business-cloud .focus-context-map>strong{display:none}.business-cloud .focus-context-map{width:auto;border:0;box-shadow:none;background:transparent;padding:0;margin:0}.business-cloud .focus-context-map>span{margin:0;font-size:10px}.business-cloud .focus-map-bottom{padding:7px 10px;min-height:43px}.business-cloud .focus-instruction{font-size:8px;max-width:160px}.business-cloud .focus-map-bottom>div{gap:5px}.business-cloud .focus-add-area,.business-cloud .focus-add-note{font-size:9px;padding:6px}.business-cloud .focus-map .react-flow__controls{bottom:10px!important;left:10px!important;flex-direction:row}.business-cloud .focus-search-results{top:7px;left:8px;width:calc(100% - 16px);max-height:calc(100% - 51px)}}
 .business-cloud .focus-search-results>div{display:flex;align-items:center;gap:7px;padding:4px 5px 8px;color:var(--muted);font-size:10px}.business-cloud .focus-search-results>div strong{font-size:10px;font-weight:500}.business-cloud .focus-search-results>button{display:grid;grid-template-columns:1fr auto;gap:2px 8px}.business-cloud .focus-search-results>button>span{font-size:11px}.business-cloud .focus-search-results>button>small{grid-row:2;grid-column:1}.business-cloud .focus-search-results>button>svg{grid-column:2;grid-row:1/3;color:var(--sage-ink)}.business-cloud .focus-empty-level{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:7px;max-width:90%;text-align:center;white-space:nowrap;font-size:10px;color:var(--muted);pointer-events:none}.business-cloud .focus-empty-level>button{pointer-events:auto;font-size:10px;color:var(--sage-ink);background:var(--paper);border:1px solid var(--border);padding:5px 9px;border-radius:5px}
+
+/* UI-01: retain the quiet sage canvas, with clearer type and room to arrange it. */
+.business-cloud {
+  --font-heading: 'Manrope', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --muted: #626d60;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.business-cloud[data-theme='dark'] {
+  --muted: #adb6a7;
+}
+
+.business-cloud .focus-node,
+.business-cloud .focus-context,
+.business-cloud .focus-map-top,
+.business-cloud .focus-map-bottom {
+  font-family: inherit;
+}
+
+.business-cloud .topbar,
+.business-cloud .panel-tabs {
+  height: 56px;
+}
+
+.business-cloud .page-heading {
+  padding-top: 20px;
+  padding-bottom: 18px;
+}
+
+.business-cloud .page-heading h1 {
+  font-size: 26px;
+  letter-spacing: -.7px;
+  margin-top: 5px;
+}
+
+.business-cloud .page-heading p {
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.business-cloud .map-toolbar {
+  margin-bottom: 12px;
+}
+
+.business-cloud .map-toolbar .search {
+  max-width: 230px;
+  border: 1px solid var(--border);
+  background: var(--paper);
+  padding: 2px 10px;
+  border-radius: 7px;
+}
+
+.business-cloud .map-toolbar .search:focus-within {
+  border-color: var(--sage);
+  box-shadow: 0 0 0 2px var(--sage-soft);
+}
+
+.business-cloud .map-toolbar .search input {
+  font-size: 11px;
+  min-height: 27px;
+}
+
+.business-cloud .map-surface {
+  border-radius: 12px;
+}
+
+.business-cloud .resume-strip {
+  min-height: 50px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.business-cloud .focus-map-top {
+  height: 44px;
+  padding-inline: 14px;
+}
+
+.business-cloud .focus-breadcrumb button {
+  font-size: 11px;
+  min-height: 30px;
+  border-radius: 5px;
+}
+
+.business-cloud .focus-level {
+  font-size: 9px;
+  letter-spacing: .7px;
+}
+
+.business-cloud .focus-node {
+  padding: 12px 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px #29372b04, 0 6px 18px #29372b07;
+}
+
+.business-cloud .focus-node-top {
+  flex-shrink: 0;
+  height: 18px;
+  margin-bottom: 6px;
+}
+
+.business-cloud .focus-node h3 {
+  flex-shrink: 0;
+  font-size: 15px;
+  line-height: 1.25;
+  font-weight: 650;
+  letter-spacing: -.25px;
+  -webkit-line-clamp: 3;
+  text-wrap: pretty;
+}
+
+.business-cloud .focus-node > p {
+  flex-shrink: 0;
+  font-size: 11px;
+  line-height: 1.4;
+  margin-top: 5px;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
+}
+
+.business-cloud .focus-node-bottom {
+  flex-shrink: 0;
+  padding-top: 5px;
+  min-height: 28px;
+}
+
+.business-cloud .focus-node-bottom > span {
+  font-size: 10px;
+}
+
+.business-cloud .focus-node-bottom > button {
+  width: 28px;
+  height: 28px;
+}
+
+.business-cloud .focus-node.is-selected {
+  border-color: var(--sage);
+  box-shadow: 0 0 0 2px var(--sage), 0 8px 24px #29372b10;
+}
+
+.business-cloud .focus-node.is-hub {
+  box-shadow: 0 0 0 9px color-mix(in srgb, var(--sage-soft) 50%, transparent),
+    0 0 0 10px color-mix(in srgb, var(--edge) 20%, transparent);
+}
+
+.business-cloud .focus-node.is-hub h3 {
+  font-size: 20px;
+  letter-spacing: -.5px;
+}
+
+.business-cloud .focus-node.is-hub.is-card h3 {
+  font-size: 17px;
+  -webkit-line-clamp: 3;
+}
+
+.business-cloud .focus-node.is-hub.is-card > p {
+  -webkit-line-clamp: 2;
+}
+
+.business-cloud .focus-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 27px;
+  min-height: 24px;
+  margin: -3px -5px -3px auto;
+  border-radius: 5px;
+  color: var(--muted);
+  cursor: grab;
+  touch-action: none;
+}
+
+.business-cloud .focus-drag-handle:hover {
+  color: var(--sage-ink);
+  background: var(--sage-soft);
+}
+
+.business-cloud .focus-drag-handle:active,
+.business-cloud .react-flow__node.dragging .focus-drag-handle {
+  cursor: grabbing;
+}
+
+.business-cloud .react-flow__node.dragging .focus-node {
+  border-color: var(--sage);
+  box-shadow: 0 12px 32px #18220f20;
+}
+
+.business-cloud .focus-context {
+  padding-top: 22px;
+}
+
+.business-cloud .focus-context > .eyebrow {
+  font-size: 8px;
+  letter-spacing: .8px;
+}
+
+.business-cloud .focus-context-map > strong {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.business-cloud .focus-context-map > span,
+.business-cloud .context-position {
+  font-size: 10px;
+}
+
+.business-cloud .focus-map-bottom {
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.business-cloud .focus-map-bottom > div {
+  flex-wrap: wrap;
+}
+
+.business-cloud .focus-instruction {
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.business-cloud .focus-reset {
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 10px;
+  min-height: 30px;
+  padding: 5px 8px;
+  white-space: nowrap;
+}
+
+.business-cloud .focus-reset:hover {
+  color: var(--sage-ink);
+  background: var(--sage-soft);
+  border-color: var(--edge);
+}
+
+.business-cloud .focus-fit {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--sage-ink);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 5px 8px;
+}
+
+.business-cloud .focus-add-area,
+.business-cloud .focus-add-note {
+  font-size: 11px;
+  min-height: 30px;
+}
+
+.business-cloud .inspector-heading h2 {
+  line-height: 1.4;
+  letter-spacing: -.4px;
+}
+
+.business-cloud .field input,
+.business-cloud .field textarea,
+.business-cloud .field select {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.business-cloud .field > span {
+  font-size: 11px;
+}
+
+@media (max-width: 760px) {
+  .business-cloud .topbar { height: 51px; }
+  .business-cloud .panel-tabs { height: 48px; }
+  .business-cloud .page-heading { padding: 15px 16px 12px; }
+  .business-cloud .page-heading h1 { font-size: 21px; }
+  .business-cloud .page-heading p { font-size: 11px; }
+  .business-cloud .map-toolbar { margin: 0 16px 10px; }
+  .business-cloud .map-toolbar .search { max-width: 160px; padding-inline: 7px; }
+  .business-cloud .map-surface { margin-inline: 10px; min-height: 200px; }
+  .business-cloud .resume-strip { padding-inline: 16px; min-height: 44px; }
+  .business-cloud .focus-map-top { padding-inline: 8px; }
+  .business-cloud .focus-breadcrumb button { font-size: 10px; }
+  .business-cloud .focus-level { font-size: 8px; letter-spacing: .3px; }
+  .business-cloud .focus-map-bottom { flex-wrap: wrap; padding: 7px 9px; }
+  .business-cloud .focus-map-bottom > div { gap: 5px; margin-left: auto; }
+  .business-cloud .focus-instruction { font-size: 9px; max-width: none; }
+  .business-cloud .focus-reset,
+  .business-cloud .focus-add-area,
+  .business-cloud .focus-add-note { font-size: 10px; min-height: 34px; }
+  .business-cloud .focus-drag-handle { display: none; }
+  .business-cloud .inspector-scroll { overscroll-behavior: contain; }
+}
+
+@media (max-width: 700px) {
+  .business-cloud .focus-context { padding: 0 10px; }
+}
+
+@media (pointer: coarse) {
+  .business-cloud .focus-drag-handle { display: none; }
+}
+
+/* Let touch scrolling reach the page; desktop map gestures remain available. */
+@media (max-width: 760px), (pointer: coarse) {
+  .business-cloud .focus-map .react-flow__pane { touch-action: pan-y pinch-zoom; }
+}
