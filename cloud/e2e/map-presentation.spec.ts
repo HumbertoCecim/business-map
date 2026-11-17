@@ -198,7 +198,7 @@ test('switching selection replaces the inspector editor without orphaned fields'
 test('narrow screens have no drag handles and keep navigation and editable drafts accessible', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const state = fixture(), commands = await installed(page, () => state); await open(page);
-  await expect(page.locator('.focus-drag-handle')).toHaveCount(0); await expect(page.locator('.focus-reset')).toHaveCount(0);
+  await expect(page.locator('.focus-drag-handle')).toHaveCount(0); await expect(page.locator('.focus-reset')).toBeVisible();
   await page.getByRole('combobox', { name: 'Choose an area', exact: true }).selectOption('people');
   await expect(byId(page, 'people').locator('.is-hub')).toBeVisible();
   await byId(page, 'interview').locator('h3').click();
@@ -207,6 +207,93 @@ test('narrow screens have no drag handles and keep navigation and editable draft
   await byId(page, 'interview').locator('h3').click(); await expect(title).toHaveValue('My fictional mobile draft');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect(commands).toEqual([]);
+});
+
+test('background creation stays a draft until saved, and pan does not open creation', async ({ page }) => {
+  await mkdir(captures, { recursive: true });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  let state = fixture(); const commands: any[] = [];
+  await installed(page, () => state);
+  await page.route('**/api/business/command', route => {
+    const command = route.request().postDataJSON().commands[0]; commands.push(command);
+    if (command.type === 'card.save') state = { ...state, board: { ...state.board, revision: 8, sections: state.board.sections.map(section => section.id === command.sectionId ? { ...section, cards: [...section.cards, command.card] } : section) } };
+    return route.fulfill({ json: state });
+  });
+  await open(page); await explore(page, 'people');
+  const pane = page.locator('.react-flow__pane');
+  const box = (await pane.boundingBox())!;
+  const click = { x: box.width - 50, y: box.height / 2 };
+  await page.mouse.move(box.x + click.x, box.y + click.y);
+  await page.mouse.down(); await page.mouse.move(box.x + click.x - 60, box.y + click.y + 30, { steps: 8 }); await page.mouse.up();
+  await expect(page.getByRole('dialog', { name: 'Add to the map' })).toHaveCount(0);
+  await pane.click({ position: click });
+  const menu = page.getByRole('dialog', { name: 'Add to the map' });
+  await expect(menu).toBeVisible(); expect(commands).toEqual([]);
+  await page.screenshot({ path: `${captures}/canvas-create.png`, fullPage: true });
+  await page.keyboard.press('Escape'); await expect(menu).toHaveCount(0);
+  const clickedPosition = await page.locator('.react-flow__viewport').evaluate((element, click) => {
+    const matrix = new DOMMatrix((element as HTMLElement).style.transform);
+    return { x: (click.x - matrix.m41) / matrix.m11 - 114, y: (click.y - matrix.m42) / matrix.m22 - 88 };
+  }, click);
+  await pane.click({ position: click });
+  await menu.getByRole('button', { name: 'New note', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Title', exact: true }).fill('A note created on the canvas');
+  expect(commands).toEqual([]);
+  await page.getByRole('button', { name: 'Add to map', exact: true }).click();
+  await expect.poll(() => commands.length).toBe(1);
+  expect(commands[0]).toMatchObject({ type: 'card.save', sectionId: 'people', card: { title: 'A note created on the canvas' } });
+  const id = commands[0].card.id;
+  await expect.poll(async () => (await preference(page, state, 'people')).positions[id]).toBeTruthy();
+  const savedPosition = await position(byId(page, id));
+  // Browser mouse coordinates round fractional CSS pixels before conversion to map coordinates.
+  expect(Math.abs(savedPosition.x - clickedPosition.x)).toBeLessThan(2);
+  expect(Math.abs(savedPosition.y - clickedPosition.y)).toBeLessThan(2);
+  await page.reload(); await expect(byId(page, id)).toBeVisible();
+  expect(await position(byId(page, id))).toEqual(savedPosition);
+  await root(page); const rootBox = (await pane.boundingBox())!;
+  await pane.click({ position: { x: rootBox.width - 40, y: rootBox.height - 50 } });
+  await menu.getByRole('combobox', { name: 'Area for the new note' }).selectOption('offer');
+  await menu.getByRole('button', { name: 'New note', exact: true }).click();
+  await expect(byId(page, 'offer').locator('.is-hub')).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Title', exact: true })).toHaveValue('');
+  expect(commands).toHaveLength(1);
+});
+
+test('reorganize clears overlaps in the current level without moving the hub or proposal or issuing commands', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  const state = fixture('presentation-a', 7, true);
+  await page.addInitScript(({ key }) => localStorage.setItem(key, JSON.stringify({ positions: { people: { x: 0, y: 0 }, offer: { x: 0, y: 0 } } })), { key: 'growyourplan.presentation.v1.' + JSON.stringify([state.businessId, state.board.boardId, state.board.boardId]) });
+  const commands = await installed(page, () => state); await open(page);
+  const ghost = await position(byId(page, 'ghost:ghost-proposal:candidate'));
+  await page.getByRole('button', { name: 'Reorganize map', exact: true }).click();
+  const nodes = await page.locator('.react-flow__node').evaluateAll(elements => elements.map(element => {
+    const style = (element as HTMLElement).style, p = new DOMMatrix(style.transform);
+    return { x: p.m41, y: p.m42, w: parseFloat(style.width), h: parseFloat(style.height) };
+  }));
+  for (let a = 0; a < nodes.length; a++) for (let b = a + 1; b < nodes.length; b++) {
+    const one = nodes[a], two = nodes[b];
+    expect(one.x + one.w <= two.x || two.x + two.w <= one.x || one.y + one.h <= two.y || two.y + two.h <= one.y).toBe(true);
+  }
+  expect(await position(byId(page, state.board.boardId))).toEqual({ x: -108, y: -108 });
+  expect(await position(byId(page, 'ghost:ghost-proposal:candidate'))).toEqual(ghost);
+  expect(commands).toEqual([]); expect(state.board.revision).toBe(7);
+});
+
+test('area connections can be followed in both directions without duplicating the relationship', async ({ page }) => {
+  await mkdir(captures, { recursive: true });
+  const state = fixture(); state.board.relations = [{ id: 'link-1', fromId: 'people', toId: 'offer', label: 'Evidence informs the offer' }];
+  const commands = await installed(page, () => state); await open(page);
+  await page.locator('.area-index>button').filter({ hasText: 'People and the decisions' }).click();
+  const connections = page.getByRole('region', { name: 'Connections', exact: true });
+  await expect(connections).toContainText('Links to');
+  await connections.getByRole('button', { name: 'An offer that makes everyday work simpler', exact: true }).click();
+  await expect(byId(page, 'offer').locator('.is-hub')).toBeVisible();
+  await expect(connections).toContainText('Linked from');
+  await connections.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: `${captures}/area-backlinks.png`, fullPage: true });
+  await connections.getByRole('button', { name: 'People and the decisions behind a new way of working together', exact: true }).click();
+  await expect(byId(page, 'people').locator('.is-hub')).toBeVisible();
+  expect(state.board.relations).toHaveLength(1); expect(commands).toEqual([]);
 });
 
 test('previous-level context shows all siblings with symbols and supports direct navigation on site and widget', async ({ page }) => {

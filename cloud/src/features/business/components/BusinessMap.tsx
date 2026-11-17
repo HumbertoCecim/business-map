@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Background, BackgroundVariant, Controls, Handle, Position, ReactFlow, ReactFlowProvider, getViewportForBounds, useReactFlow, useStore, type Node, type Edge, type NodeProps, type NodeChange } from '@xyflow/react';
-import { ArrowLeft, ArrowUpRight, BookOpen, Check, ChevronRight, Circle, Compass, FlaskConical, GripVertical, Handshake, Layers3, Megaphone, Package, Plus, RotateCcw, Search, Settings2, ShieldQuestion, Sparkles, Sprout, Target, Users, Wallet } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, BookOpen, Check, ChevronRight, Circle, Compass, FlaskConical, GripVertical, Handshake, Layers3, Megaphone, Package, Plus, RotateCcw, Search, Settings2, ShieldQuestion, Sparkles, Sprout, Target, Users, Wallet, X } from 'lucide-react';
 import type { Board } from '../../../business/model';
 import { getChildren, getDepth, getNode, getParent, getPath, MAX_HIERARCHY_DEPTH, type HierarchyNode } from '../../../../../shared/hierarchy';
 import { CARD_HEIGHT, CARD_WIDTH, readFocus, readView, reconcilePositions, saveFocus, saveView, viewKey, type MapView } from '../map-presentation';
@@ -47,7 +47,7 @@ const nodeTypes = { focus: FocusNode };
 export type BusinessMapProps = {
   businessId?: string;
   board: Board; selected: string; query: string; area: string | null;
-  onSelect: (id: string) => void; onAdd: (id: string) => void; onOpen: (id: string) => void;
+  onSelect: (id: string) => void; onAdd: (id: string) => string | void; onOpen: (id: string) => void;
   onProposal: (id: string) => void; theme: string; readOnly?: boolean;
   focusId?: string | null; onFocusChange?: (id: string | null) => void;
   onCreateArea?: (parentId?: string) => void;
@@ -138,6 +138,13 @@ function MapInner(props: BusinessMapProps) {
   const ghosts = board.suggestions.filter(suggestion => suggestion.status === 'pending' && suggestion.mapDraft).flatMap(suggestion => suggestion.mapDraft!.sections.filter(section => (section.parentId || board.boardId) === current.id && !getNode(board, section.id)).map(section => ({ id: `ghost:${suggestion.id}:${section.id}`, title: section.title, count: section.cards.length, suggestionId: suggestion.id })));
   const viewSignature = viewKey(businessId, board.boardId, current.id);
   const flow = useReactFlow();
+  const canvas = useRef<HTMLDivElement>(null);
+  const composerElement = useRef<HTMLDivElement>(null);
+  const [composer, setComposer] = useState<{ x: number; y: number; point: { x: number; y: number } } | null>(null);
+  const [noteArea, setNoteArea] = useState('');
+  const placements = useRef(new Map<string, { focus: string; point: { x: number; y: number } }>());
+  useEffect(() => { setComposer(null); }, [viewSignature]);
+  useEffect(() => { if (composer) composerElement.current?.focus(); }, [composer]);
   const width = useStore(state => state.width), height = useStore(state => state.height);
   const fittedSignature = useRef<string | null>(null);
   const views = useRef(new Map<string, MapView>());
@@ -148,9 +155,19 @@ function MapInner(props: BusinessMapProps) {
   const idsSignature = JSON.stringify(ids);
   if (!views.current.has(viewSignature)) views.current.set(viewSignature, readOnly ? { positions: {} } : readView(viewSignature));
   const view = views.current.get(viewSignature)!;
-  const positions = useMemo(() => reconcilePositions(ids, view.positions), [viewSignature, idsSignature, view.positions]);
+  const positions = useMemo(() => {
+    const saved = { ...view.positions };
+    for (const id of ids) {
+      const placement = placements.current.get(id);
+      if (placement?.focus === viewSignature && !saved[id]) saved[id] = placement.point;
+    }
+    return reconcilePositions(ids, saved);
+  }, [viewSignature, idsSignature, view.positions]);
   view.positions = positions;
-  useEffect(() => { if (!readOnly) saveView(viewSignature, view); }, [viewSignature, idsSignature, readOnly]);
+  useEffect(() => {
+    if (!readOnly) saveView(viewSignature, view);
+    ids.forEach(id => placements.current.delete(id));
+  }, [viewSignature, idsSignature, readOnly]);
   const movableIds = new Set(children.map(child => child.id));
   const changeNodes = (changes: NodeChange[]) => {
     if (!canDrag) return;
@@ -168,11 +185,28 @@ function MapInner(props: BusinessMapProps) {
     }
   };
   const restoreLayout = () => {
-    view.positions = reconcilePositions(ids, {});
+    placements.current.clear();
+    view.positions = reconcilePositions(ids, Object.fromEntries(ghosts.map(ghost => [ghost.id, view.positions[ghost.id]])));
     delete view.viewport;
     saveView(viewSignature, view);
     fittedSignature.current = null;
     setResetVersion(value => value + 1);
+  };
+  const noteAreas = board.sections.filter(section => (getDepth(board, section.id) || 2) < MAX_HIERARCHY_DEPTH);
+  const openComposer = (event: React.MouseEvent) => {
+    if (readOnly) { onSelect(current.id); return; }
+    const bounds = canvas.current?.getBoundingClientRect();
+    if (!bounds) return;
+    setNoteArea(current.kind === 'section' && depth < MAX_HIERARCHY_DEPTH ? current.id : '');
+    setComposer({ x: Math.max(8, Math.min(event.clientX - bounds.left, bounds.width - 252)), y: Math.max(8, Math.min(event.clientY - bounds.top, bounds.height - 240)), point: flow.screenToFlowPosition({ x: event.clientX, y: event.clientY }) });
+  };
+  const createNote = () => {
+    if (!noteArea || !composer) return;
+    placements.current.clear();
+    const id = onAdd(noteArea);
+    if (id && noteArea === current.id) placements.current.set(id, { focus: viewSignature, point: { x: composer.point.x - CARD_WIDTH / 2, y: composer.point.y - CARD_HEIGHT / 2 } });
+    if (noteArea !== current.id) navigate(noteArea);
+    setComposer(null);
   };
   const nodes: Node<MapData>[] = [{ id: current.id, type: 'focus', position: { x: -108, y: -108 }, style: { width: 216, height: 216 }, data: { title: current.title, kind: current.kind, text: current.kind === 'card' ? content(current) : undefined, count: children.length, hub: true, done: current.card?.done, lane: current.card?.lane, focus: board.focus.cardIds.includes(current.id) }, draggable: false, selected: current.id === selected }];
   children.forEach((child) => nodes.push({ id: child.id, type: 'focus', position: positions[child.id], style: { width: CARD_WIDTH, height: CARD_HEIGHT }, dragHandle: '.focus-drag-handle', className: normalized && !branchMatches.has(child.id) ? 'search-dim' : undefined, data: { movable: canDrag, title: child.title, kind: child.kind, text: content(child), count: getChildren(board, child.id).length, done: child.card?.done, lane: child.card?.lane, firstStep: child.card?.firstStep, focus: board.focus.cardIds.includes(child.id), matchCount: branchMatches.get(child.id), onOpen: () => navigate(child.id, true) }, draggable: canDrag, selected: child.id === selected }));
@@ -207,6 +241,7 @@ function MapInner(props: BusinessMapProps) {
     // Node text, polling, inspector changes and host resizing preserve the viewport.
   }, [viewSignature, width, height, flow, resetVersion, desktop]);
   return <div className={`focus-map ${current.kind === 'board' ? 'at-root' : 'in-branch'}`} onKeyDownCapture={event => {
+    if (event.key === 'Escape' && composer) { event.preventDefault(); setComposer(null); return; }
     const target = event.target as HTMLElement;
     if (event.key !== 'Enter' || !target.classList.contains('react-flow__node')) return;
     const node = nodes.find(item => item.id === target.dataset.id);
@@ -216,18 +251,25 @@ function MapInner(props: BusinessMapProps) {
     else if (event.shiftKey) navigate(node.id, true);
     else onSelect(node.id);
   }}>
-    <div className="focus-map-top"><nav className="focus-breadcrumb" aria-label={t('Caminho no mapa')}>{path.map((node, index) => <span key={node.id}>{index > 0 && <ChevronRight size={11}/>}<button aria-current={index === path.length - 1 ? 'location' : undefined} onClick={() => navigate(node.id)} title={node.title}>{index === 0 && <Sprout size={13}/>}<span>{node.title}</span></button></span>)}</nav><button className="focus-fit" onClick={() => void flow.fitView({ padding: .12, maxZoom: 1.1 })}>{t("Enquadrar mapa")}</button><span className="focus-level">{t('NÍVEL')} {depth} <span>/ {MAX_HIERARCHY_DEPTH}</span></span></div>
-    <div className="focus-map-body"><ParentContext board={board} current={current} onNavigate={id => navigate(id)}/><div className="focus-map-canvas">
-      <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} onNodeClick={(_, node) => node.data.ghost ? onProposal(node.data.suggestionId as string) : onSelect(node.id)} onNodeDoubleClick={(_, node) => !node.data.ghost && navigate(node.id, true)} onPaneClick={() => onSelect(current.id)} minZoom={.15} maxZoom={1.8} nodesDraggable={canDrag} nodeDragThreshold={6} onNodesChange={changeNodes}
+    <div className="focus-map-top"><nav className="focus-breadcrumb" aria-label={t('Caminho no mapa')}>{path.map((node, index) => <span key={node.id}>{index > 0 && <ChevronRight size={11}/>}<button aria-current={index === path.length - 1 ? 'location' : undefined} onClick={() => navigate(node.id)} title={node.title}>{index === 0 && <Sprout size={13}/>}<span>{node.title}</span></button></span>)}</nav><div className="focus-map-actions"><button className="focus-fit" onClick={() => void flow.fitView({ padding: .12, maxZoom: 1.1 })}>{t("Enquadrar mapa")}</button>{!readOnly && <button className="focus-reset" title={t('Restaurar disposição do nível atual')} onClick={restoreLayout}><RotateCcw size={13}/>{t('Reorganizar mapa')}</button>}</div><span className="focus-level">{t('NÍVEL')} {depth} <span>/ {MAX_HIERARCHY_DEPTH}</span></span></div>
+    <div className="focus-map-body"><ParentContext board={board} current={current} onNavigate={id => navigate(id)}/><div ref={canvas} className="focus-map-canvas">
+      <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} onNodeClick={(_, node) => { setComposer(null); node.data.ghost ? onProposal(node.data.suggestionId as string) : onSelect(node.id); }} onNodeDoubleClick={(_, node) => !node.data.ghost && navigate(node.id, true)} onPaneClick={openComposer} onMoveStart={() => setComposer(null)} minZoom={.15} maxZoom={1.8} nodesDraggable={canDrag} nodeDragThreshold={6} onNodesChange={changeNodes}
         onNodeDragStop={(_, node) => { if (canDrag && movableIds.has(node.id)) { view.positions = { ...view.positions, [node.id]: node.position }; saveView(viewSignature, view); redraw(value => value + 1); } }}
         onMoveEnd={(_, viewport) => { if (fittedSignature.current === viewSignature) { view.viewport = viewport; view.canvas = { width, height, narrow: !desktop }; if (!readOnly) saveView(viewSignature, view); } }}
         panOnDrag={desktop} zoomOnScroll={desktop} zoomOnPinch={desktop} preventScrolling={false} nodesConnectable={false} deleteKeyCode={null} zoomOnDoubleClick={false} colorMode={theme === 'dark' ? 'dark' : 'light'} proOptions={{ hideAttribution: true }}>
         <Background variant={BackgroundVariant.Dots} gap={23} size={.7} color="var(--dot)"/><Controls showInteractive={false}/>
       </ReactFlow>
+      {composer && <div ref={composerElement} tabIndex={-1} role="dialog" aria-label={t('Criar no mapa')} className="map-create-menu" style={{ left: composer.x, top: composer.y }}>
+        <div><strong>{t('Criar no mapa')}</strong><button className="icon-button" aria-label={t('Fechar')} onClick={() => setComposer(null)}><X size={15}/></button></div>
+        <p>{t('A ideia só entra no mapa quando você salvar.')}</p>
+        {current.kind !== 'section' || depth >= MAX_HIERARCHY_DEPTH ? <label className="field"><span>{t('Área da nova nota')}</span><select value={noteArea} onChange={event => setNoteArea(event.target.value)}><option value="">{t('Escolha uma área')}</option>{noteAreas.map(section => <option key={section.id} value={section.id}>{section.title}</option>)}</select></label> : null}
+        <button className="secondary full" disabled={!noteArea} onClick={createNote}><Plus size={14}/>{t('Nova nota')}</button>
+        {depth < MAX_HIERARCHY_DEPTH && onCreateArea && <button className="text-button" onClick={() => { setComposer(null); onCreateArea(current.kind === 'board' ? undefined : current.id); }}><Layers3 size={14}/>{t(current.kind === 'board' ? 'Nova área' : 'Subárea')}</button>}
+      </div>}
       {normalized && <section className="focus-search-results" aria-label={t('Resultados da busca')}><div><Search size={12}/><strong>{matches.length ? <>{matches.length} {t(matches.length === 1 ? 'resultado no mapa' : 'resultados no mapa')}</> : t('Nenhum resultado no mapa')}</strong></div>{matches.slice(0, 6).map(match => <button key={match.id} onClick={() => { navigate(getParent(board, match.id)?.id || board.boardId); onSelect(match.id); }}><span>{match.title}</span><small>{getPath(board, match.id).slice(0, -1).map(node => node.title).join(' / ') || t('Seu negócio')}</small><ArrowUpRight size={12}/></button>)}{matches.length > 6 && <p>{t('Refine a busca para encontrar os outros')} {matches.length - 6} {t('itens.')}</p>}{!matches.length && <p>{t('Tente outra palavra. A busca percorre todos os níveis.')}</p>}</section>}
       {!count && <div className="focus-empty-level"><span>{t(depth >= MAX_HIERARCHY_DEPTH ? 'Você chegou ao último nível.' : 'Uma ideia pode abrir novos caminhos.')}</span>{!readOnly && depth < MAX_HIERARCHY_DEPTH && onCreateArea && <button onClick={() => onCreateArea(current.kind === 'board' ? undefined : current.id)}><Plus size={12}/> {t('Criar uma área aqui')}</button>}</div>}
     </div></div>
-    <div className="focus-map-bottom">{canDrag && <button className="focus-reset" title={t('Restaurar disposição do nível atual')} onClick={restoreLayout}><RotateCcw size={13}/>{t('Restaurar disposição')}</button>}<span className="focus-instruction">{t('Clique para ver detalhes')} <span>·</span> {t(canDrag ? 'Arraste a alça para organizar' : 'Abra a seta para explorar')}</span><div>{!readOnly && current.kind === 'section' && depth < MAX_HIERARCHY_DEPTH && <button className="focus-add-note" onClick={() => onAdd(current.id)}><Plus size={13}/> {t('Nova nota')}</button>}{!readOnly && onCreateArea && depth < MAX_HIERARCHY_DEPTH && <button className="focus-add-area" onClick={() => onCreateArea(current.kind === 'board' ? undefined : current.id)}><Plus size={13}/> {t(current.kind === 'board' ? 'Nova área' : 'Subárea')}</button>}</div></div>
+    <div className="focus-map-bottom"><span className="focus-instruction">{t(readOnly ? 'Clique para ver detalhes' : 'Clique no fundo para criar')} <span>·</span> {t(canDrag ? 'Arraste a alça para organizar' : 'Abra a seta para explorar')}</span><div>{!readOnly && current.kind === 'section' && depth < MAX_HIERARCHY_DEPTH && <button className="focus-add-note" onClick={() => onAdd(current.id)}><Plus size={13}/> {t('Nova nota')}</button>}{!readOnly && onCreateArea && depth < MAX_HIERARCHY_DEPTH && <button className="focus-add-area" onClick={() => onCreateArea(current.kind === 'board' ? undefined : current.id)}><Plus size={13}/> {t(current.kind === 'board' ? 'Nova área' : 'Subárea')}</button>}</div></div>
   </div>;
 }
 export function BusinessMap(props: BusinessMapProps) { return <ReactFlowProvider><MapInner {...props}/></ReactFlowProvider>; }

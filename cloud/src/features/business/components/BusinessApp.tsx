@@ -64,7 +64,9 @@ function BusinessWorkspace({ snapshot, update, refresh, online, error, setError,
   };
   const newCard = (id: string) => {
     if(snapshot && (getDepth(snapshot.board,id)||1)>=MAX_HIERARCHY_DEPTH){setNotice(t("Você chegou ao nível 5. Continue desenvolvendo o conteúdo aqui ou volte um nível para adicionar uma nota."));return;}
-    select(`new-card:${id}:${uid('card')}`);
+    const cardId = uid('card');
+    select(`new-card:${id}:${cardId}`);
+    return cardId;
   };
   const loadPreview = useCallback((id: string) => api<ProposalPreview>(`/api/business/proposals/${encodeURIComponent(id)}/preview`, {}), []);
   const resolveProposal = async (preview: ProposalPreview, action: 'apply' | 'reject') => {
@@ -98,7 +100,7 @@ function BusinessWorkspace({ snapshot, update, refresh, online, error, setError,
     </main>
     <aside className="inspector" aria-label={t("Detalhe selecionado")}><div className="panel-tabs"><span><BookOpen size={15}/> {t("Detalhe")}</span><button className="icon-button" aria-label={t("Fechar detalhe")} onClick={() => setPanel(false)}><X size={16}/></button></div><div className="inspector-scroll">
       {proposal ? <ProposalReview key={`${snapshot.businessId}:${proposal?.id}`} proposalId={proposal.id} load={loadPreview} confirm={preview => resolveProposal(preview, 'apply')} reject={preview => resolveProposal(preview, 'reject')}/> : section || isNewArea ? <SectionEditor key={`${snapshot.businessId}:${selected}`} snapshot={snapshot} initial={section || emptySection} isNew={isNewArea} run={run} busy={busy} onSelect={select} onNewCard={newCard} onOpen={id=>{setArea(id);setView('map');setPanel(false);}} onCreateArea={newArea}/> : card || isNewCard ? <CardEditor key={`${snapshot.businessId}:${selected}`} snapshot={snapshot} initial={card || emptyCard} sectionId={owner?.id || newCardOwner} isNew={isNewCard} run={run} busy={busy} onSelect={select} onOpen={id=>{setArea(id);setView('map');setPanel(false);}} onCreateArea={newArea}/> : <BoardEditor key={`${snapshot.businessId}:${selected}`} snapshot={snapshot} run={run} busy={busy} resumeOnly={selected === 'resume'} onSelect={select}/>}
-      {!proposal && !isNewCard && !isNewArea && !card && <Relations key={`relations:${snapshot.businessId}:${selected}`} snapshot={snapshot} run={run} origin={section?.id} busy={busy}/>}
+      {!proposal && !isNewCard && !isNewArea && !card && <Relations key={`relations:${snapshot.businessId}:${selected}`} snapshot={snapshot} run={run} origin={section?.id} busy={busy} onSelect={id => { const node = getNode(b, id); if (node?.kind === 'section') setArea(id); select(id); }}/ >}
     </div></aside>
     <div className="cloud-mobile-tools"><button onClick={() => setConnect(true)}><Link2 size={15}/> ChatGPT</button><button onClick={() => setDataTools(true)}><Download size={15}/> {t("Seus dados")}</button><button onClick={() => select(b.boardId)}><BookOpen size={15}/> {t("Detalhes")}</button></div>
     {connect && <ConnectChatGPT onClose={() => setConnect(false)}/>} {dataTools && <DataTools snapshot={snapshot} onClose={() => setDataTools(false)} onRefresh={refresh}/>}

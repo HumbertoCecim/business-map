@@ -406,6 +406,26 @@
 }
 
 /* Previous-level context: every sibling remains identifiable and reachable. */
+.business-cloud .focus-map-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+.business-cloud .focus-map-actions .focus-reset { min-height: 30px; border: 1px solid var(--border); background: var(--paper); border-radius: 6px; padding: 5px 8px; font-size: 10px; }
+.business-cloud .map-create-menu { position: absolute; z-index: 8; width: 244px; max-width: calc(100% - 16px); max-height: calc(100% - 16px); overflow: auto; padding: 13px; background: var(--paper); border: 1px solid var(--edge); border-radius: 10px; box-shadow: 0 8px 28px #0002; }
+.business-cloud .map-create-menu > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.business-cloud .map-create-menu strong { font-size: 13px; }
+.business-cloud .map-create-menu p { font-size: 11px; line-height: 1.6; color: var(--muted); margin: 5px 0 13px; }
+.business-cloud .map-create-menu .field { margin-bottom: 10px; }
+.business-cloud .map-create-menu .text-button { margin-top: 4px; }
+.business-cloud .linked-relation { align-items: flex-start; }
+.business-cloud .relation-destination { flex: 1; min-width: 0; }
+.business-cloud .relation-destination > small { display: block; font-size: 10px; color: var(--muted); margin-bottom: 5px; }
+.business-cloud .relation-destination p { font-size: 11px; color: var(--muted); margin-top: 5px; overflow-wrap: anywhere; }
+.business-cloud .relation-open, .business-cloud .relation-endpoints button { text-align: left; color: var(--sage-ink); font-size: 12px; overflow-wrap: anywhere; }
+.business-cloud .relation-open:hover, .business-cloud .relation-endpoints button:hover { text-decoration: underline; }
+.business-cloud .relation-endpoints { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+@media (max-width: 700px) {
+  .business-cloud:not(.map-widget) .focus-map-top { height: auto; min-height: 68px; flex-wrap: wrap; padding-block: 6px; }
+  .business-cloud:not(.map-widget) .focus-breadcrumb { flex-basis: 100%; }
+  .business-cloud:not(.map-widget) .focus-level { margin-left: auto; }
+}
 .business-cloud .focus-context {
   width: clamp(236px, 27%, 300px);
   max-width: 36%;
