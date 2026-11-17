@@ -209,6 +209,51 @@ test('narrow screens have no drag handles and keep navigation and editable draft
   expect(commands).toEqual([]);
 });
 
+test('previous-level context shows all siblings with symbols and supports direct navigation on site and widget', async ({ page }) => {
+  await mkdir(captures, { recursive: true });
+  await page.setViewportSize({ width: 1600, height: 1050 });
+  const state = fixture('presentation-a', 7, true);
+  state.board.sections.find(section => section.id === 'extra-6')!.title = '🧭 Decisions worth revisiting';
+  const commands = await installed(page, () => state); await open(page); await explore(page, 'people');
+  const context = page.getByRole('complementary', { name: 'Previous level', exact: true });
+  const siblings = state.board.sections.filter(section => !section.parentId);
+  await expect(context.locator('.context-neighbor')).toHaveCount(siblings.length);
+  await expect(context.locator('[aria-current="location"]')).toContainText('People and the decisions');
+  await expect(context.locator('[aria-current="location"] .lucide-users')).toHaveCount(1);
+  await expect(byId(page, 'people').locator('.lucide-users')).toHaveCount(1);
+  await expect(context.locator('.context-neighbor').first()).toHaveAttribute('title', /Which people have we not heard from yet/);
+  expect((await context.boundingBox())!.width).toBeGreaterThan(230);
+  await page.screenshot({ path: `${captures}/context-light.png`, fullPage: true });
+  const last = context.locator('.context-neighbor').last();
+  await last.focus(); await page.keyboard.press('Enter');
+  await expect(byId(page, 'extra-6').locator('.is-hub')).toBeVisible();
+  await expect(last).toHaveAttribute('aria-current', 'location');
+  await expect(last.locator('.map-symbol-emoji')).toHaveText('🧭');
+  await context.getByRole('button', { name: `Back to ${state.board.title}`, exact: true }).click();
+  await explore(page, 'people');
+  await page.getByRole('button', { name: 'Toggle theme', exact: true }).first().click();
+  await page.screenshot({ path: `${captures}/context-dark.png`, fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await context.getByRole('combobox', { name: 'Explore the previous level' }).selectOption('offer');
+  await expect(byId(page, 'offer').locator('.is-hub')).toBeInViewport();
+  await page.waitForTimeout(200);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: `${captures}/context-mobile.png`, fullPage: true });
+  expect(commands).toEqual([]); expect(state.board.revision).toBe(7);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.route('**/test-tool', route => route.fulfill({ json: { content: [], _meta: { businessMap: { snapshot: state, approvalAvailable: false } } } }));
+  await page.goto('/widget-host'); const frame = page.frameLocator('#map-frame');
+  await frame.getByRole('button', { name: `Explore ${siblings[0].title}`, exact: true }).click();
+  const widgetContext = frame.getByRole('complementary', { name: 'Previous level', exact: true });
+  await expect(widgetContext.locator('.context-neighbor')).toHaveCount(siblings.length);
+  await widgetContext.locator('.context-neighbor').last().click();
+  await expect(frame.locator('.react-flow__node[data-id="extra-6"] .is-hub')).toBeVisible();
+  await expect(frame.locator('.focus-drag-handle')).toHaveCount(0);
+  await expect.poll(() => page.locator('#map-frame').evaluate(element => element.getBoundingClientRect().height)).toBeLessThanOrEqual(640);
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: `${captures}/context-widget.png`, fullPage: true });
+});
+
 test('capture fictional desktop, branch, mobile and inline widget review surfaces', async ({ page }) => {
   await mkdir(captures, { recursive: true });
   await page.setViewportSize({ width: 1600, height: 1050 });

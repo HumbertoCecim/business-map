@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Background, BackgroundVariant, Controls, Handle, Position, ReactFlow, ReactFlowProvider, getViewportForBounds, useReactFlow, useStore, type Node, type Edge, type NodeProps, type NodeChange } from '@xyflow/react';
-import { ArrowLeft, ArrowUpRight, Check, ChevronRight, Circle, GripVertical, Layers3, Plus, RotateCcw, Search, Sparkles, Sprout, Target } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, BookOpen, Check, ChevronRight, Circle, Compass, FlaskConical, GripVertical, Handshake, Layers3, Megaphone, Package, Plus, RotateCcw, Search, Settings2, ShieldQuestion, Sparkles, Sprout, Target, Users, Wallet } from 'lucide-react';
 import type { Board } from '../../../business/model';
 import { getChildren, getDepth, getNode, getParent, getPath, MAX_HIERARCHY_DEPTH, type HierarchyNode } from '../../../../../shared/hierarchy';
 import { CARD_HEIGHT, CARD_WIDTH, readFocus, readView, reconcilePositions, saveFocus, saveView, viewKey, type MapView } from '../map-presentation';
@@ -12,11 +12,30 @@ type MapData = Record<string, unknown> & {
   suggestionId?: string; matchCount?: number; onOpen?: () => void; movable?: boolean;
 };
 const kindLabel = (kind: HierarchyNode['kind']) => kind === 'board' ? 'SEU NEGÓCIO' : kind === 'section' ? 'ÁREA DO NEGÓCIO' : 'NOTA';
+/** Visual hints only: never written into the map or used to classify its data. */
+function MapSymbol({ title, kind, size = 18 }: { title: string; kind: HierarchyNode['kind']; size?: number }) {
+  const emoji = title.match(/\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?)*/u)?.[0];
+  if (emoji) return <span className="map-symbol-emoji" aria-hidden="true">{emoji}</span>;
+  const words = title.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const Icon = kind === 'board' ? Sprout
+    : /\b(people|customer|customers|client|clients|team|pessoas|clientes|equipe|publico)\b/.test(words) ? Users
+    : /\b(partner|partners|partnerships|parcerias|parceiros|collaboration|colaboracao)\b/.test(words) ? Handshake
+    : /\b(revenue|pricing|cost|costs|money|budget|receita|custos|preco|orcamento|financeiro)\b/.test(words) ? Wallet
+    : /\b(research|experiment|experiments|evidence|interview|interviews|pesquisa|experimentos|evidencias|entrevistas)\b/.test(words) ? FlaskConical
+    : /\b(operations|delivery|process|processes|operacoes|entrega|processos)\b/.test(words) ? Settings2
+    : /\b(brand|communication|marketing|channels|marca|comunicacao|canais)\b/.test(words) ? Megaphone
+    : /\b(risk|risks|uncertainty|riscos|incertezas)\b/.test(words) ? ShieldQuestion
+    : /\b(learning|knowledge|aprendizado|conhecimento)\b/.test(words) ? BookOpen
+    : /\b(resources|offer|product|products|value|recursos|oferta|produto|produtos|valor)\b/.test(words) ? Package
+    : /\b(decision|decisions|strategy|decisoes|estrategia)\b/.test(words) ? Compass
+    : kind === 'section' ? Layers3 : Circle;
+  return <Icon size={size} aria-hidden="true"/>;
+}
 function FocusNode({ data, selected }: NodeProps<Node<MapData>>) {
   const t = useUiText();
   return <div className={`focus-node ${data.hub ? 'is-hub' : ''} ${data.kind === 'card' ? 'map-card' : ''} is-${data.kind} ${selected ? 'is-selected' : ''} ${data.ghost ? 'is-proposal' : ''} ${data.done ? 'is-done' : ''}`}>
     <Handle type="target" position={Position.Left}/>
-    <div className="focus-node-top"><span className="focus-node-symbol">{data.ghost ? <Sparkles size={16}/> : data.kind === 'board' ? <Sprout size={27}/> : data.kind === 'section' ? <Layers3 size={16}/> : data.done ? <Check size={16}/> : <Circle size={15}/>}</span>{data.focus && <Target size={13}/ >}{data.movable && <span className="focus-drag-handle nopan" title={t('Arrastar para organizar')} aria-label={t('Arrastar para organizar')}><GripVertical size={16}/></span>}</div>
+    <div className="focus-node-top"><span className="focus-node-symbol">{data.ghost ? <Sparkles size={16}/> : data.done ? <Check size={16}/> : <MapSymbol title={data.title} kind={data.kind} size={data.hub ? 25 : 18}/>}</span>{data.focus && <Target size={13}/ >}{data.movable && <span className="focus-drag-handle nopan" title={t('Arrastar para organizar')} aria-label={t('Arrastar para organizar')}><GripVertical size={16}/></span>}</div>
     <span className="focus-node-kind">{data.ghost ? t('PROPOSTA PARA REVISAR') : t(kindLabel(data.kind))}</span>
     <h3 title={data.title}>{data.title || t('Sem título')}</h3>
     {data.text && <p>{data.text}</p>}
@@ -37,19 +56,36 @@ export type BusinessMapProps = {
 function content(node: HierarchyNode) { return node.card ? node.card.text : node.section?.questions || ''; }
 function ParentContext({ board, current, onNavigate }: { board: Board; current: HierarchyNode; onNavigate: (id: string) => void }) {
   const t = useUiText();
+  const list = useRef<HTMLUListElement>(null);
+  useEffect(() => {
+    const container = list.current;
+    const selected = container?.querySelector<HTMLElement>('[aria-current="location"]');
+    if (!container || !selected || !container.clientHeight) return;
+    const top = selected.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
+    const bottom = top + selected.offsetHeight;
+    if (top < container.scrollTop) container.scrollTop = top;
+    else if (bottom > container.scrollTop + container.clientHeight) container.scrollTop = bottom - container.clientHeight + 6;
+  }, [current.id]);
   const parent = getParent(board, current.id);
   if (!parent) return null;
-  const siblings = getChildren(board, parent.id), preview = siblings.slice(0, 8);
+  const siblings = getChildren(board, parent.id);
   return <aside className="focus-context" aria-label={t('Nível anterior')}>
     <span className="eyebrow">{t('DE ONDE VOCÊ VEIO')}</span>
-    <button className="focus-context-map" aria-label={`${t('Voltar para')} ${parent.title}`} onClick={() => onNavigate(parent.id)}>
-      <svg viewBox="0 0 160 142" aria-hidden="true"><circle className="context-ring" cx="80" cy="70" r="48"/>{preview.map((node, index) => {
-        const angle = [-90, 90, 0, 180, -45, 135, 45, 225][index] * Math.PI / 180, x = 80 + Math.cos(angle) * 50, y = 70 + Math.sin(angle) * 46;
-        return <g key={node.id}><line x1="80" y1="70" x2={x} y2={y}/><rect x={x - 11} y={y - 8} width="22" height="16" rx="5" className={node.id === current.id ? 'context-current' : ''}/></g>;
-      })}<circle className="context-center" cx="80" cy="70" r="19"/><path d="M74 74h12M80 68v12M80 68c-1-8 8-9 8-9s1 8-8 9M80 68c1-7-7-8-7-8s-1 7 7 8"/></svg>
-      <strong>{parent.title}</strong><span><ArrowLeft size={12}/> {t('Voltar um nível')}</span>
+    <button className="context-parent" title={parent.title} aria-label={`${t('Voltar para')} ${parent.title}`} onClick={() => onNavigate(parent.id)}>
+      <span className="context-symbol"><MapSymbol title={parent.title} kind={parent.kind} size={23}/></span>
+      <span><strong>{parent.title}</strong><small><ArrowLeft size={12}/> {t('Voltar um nível')}</small></span>
     </button>
-    <div className="context-position"><span className="live-dot"/> {t('Você está em')} <strong>{current.title}</strong></div>
+    <div className="context-neighbor-heading"><span>{t('Neste nível')}</span><span>{siblings.length} {t(siblings.length === 1 ? 'item' : 'itens')}</span></div>
+    <ul ref={list} className="context-neighbors" aria-label={t('Elementos do nível anterior')}>
+      {siblings.map(node => <li key={node.id}><button className="context-neighbor" aria-current={node.id === current.id ? 'location' : undefined} title={[node.title, content(node)].filter(Boolean).join('\n')} onClick={() => onNavigate(node.id)}>
+        <span className="context-symbol"><MapSymbol title={node.title} kind={node.kind}/></span>
+        <span className="context-neighbor-copy"><strong>{node.title || t('Sem título')}</strong>{node.id === current.id && <small><span className="live-dot"/>{t('Você está aqui')}</small>}</span>
+        <ChevronRight size={13}/>
+      </button></li>)}
+    </ul>
+    <select className="context-picker" aria-label={t('Navegar no nível anterior')} value={current.id} onChange={event => onNavigate(event.target.value)}>
+      {siblings.map(node => <option key={node.id} value={node.id}>{node.title || t('Sem título')}</option>)}
+    </select>
   </aside>;
 }
 function MapInner(props: BusinessMapProps) {

@@ -404,3 +404,87 @@
 @media (max-width: 760px), (pointer: coarse) {
   .business-cloud .focus-map .react-flow__pane { touch-action: pan-y pinch-zoom; }
 }
+
+/* Previous-level context: every sibling remains identifiable and reachable. */
+.business-cloud .focus-context {
+  width: clamp(236px, 27%, 300px);
+  max-width: 36%;
+  min-height: 0;
+  padding: 20px 14px 12px;
+  overflow: hidden;
+}
+.business-cloud .focus-context > .eyebrow { text-align: left; padding: 0 4px; }
+.business-cloud .context-parent {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-start;
+  gap: 11px;
+  width: 100%;
+  padding: 14px 10px;
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--paper);
+  text-align: left;
+}
+.business-cloud .context-parent:hover { background: var(--sage-soft); border-color: var(--edge); }
+.business-cloud .context-parent > span:last-child { min-width: 0; }
+.business-cloud .context-parent strong { display: block; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.business-cloud .context-parent small { display: flex; align-items: center; gap: 5px; margin-top: 7px; color: var(--muted); font-size: 10px; }
+.business-cloud .context-symbol {
+  display: flex; align-items: center; justify-content: center;
+  width: 31px; height: 31px; flex-shrink: 0; border-radius: 9px;
+  background: var(--sage-soft); color: var(--sage-ink);
+}
+.business-cloud .map-symbol-emoji { font-size: 19px; line-height: 1; }
+.business-cloud .context-neighbor-heading {
+  display: flex; justify-content: space-between; gap: 8px;
+  flex-shrink: 0; padding: 18px 5px 10px; color: var(--muted); font-size: 10px;
+}
+.business-cloud .context-neighbors {
+  position: relative; flex: 1; min-height: 0; overflow-y: auto;
+  list-style: none; padding: 2px 4px 6px 13px; margin: 0;
+  scrollbar-width: thin; overscroll-behavior: contain;
+}
+.business-cloud .context-neighbors li { position: relative; padding: 0 0 5px; }
+.business-cloud .context-neighbors li::before {
+  content: ''; position: absolute; left: -9px; top: 0; bottom: 0;
+  border-left: 1px solid var(--edge); opacity: .65;
+}
+.business-cloud .context-neighbors li::after {
+  content: ''; position: absolute; left: -9px; top: 24px; width: 9px;
+  border-top: 1px solid var(--edge); opacity: .65;
+}
+.business-cloud .context-neighbors li:last-child::before { bottom: calc(100% - 24px); }
+.business-cloud .context-neighbor {
+  width: 100%; display: flex; justify-content: flex-start; align-items: center;
+  gap: 9px; padding: 9px 7px; text-align: left; border: 1px solid transparent; border-radius: 9px;
+}
+.business-cloud .context-neighbor:hover { background: var(--paper); border-color: var(--border); }
+.business-cloud .context-neighbor[aria-current] { background: var(--sage-soft); border-color: var(--edge); }
+.business-cloud .context-neighbor[aria-current] .context-symbol { background: var(--sage); color: var(--paper); }
+.business-cloud[data-theme=dark] .context-neighbor[aria-current] .context-symbol { color: var(--canvas); }
+.business-cloud .context-neighbor-copy { min-width: 0; flex: 1; }
+.business-cloud .context-neighbor strong { display: block; font-size: 12px; line-height: 1.5; font-weight: 500; overflow-wrap: anywhere; }
+.business-cloud .context-neighbor small { display: flex; align-items: center; gap: 5px; margin-top: 5px; color: var(--sage-ink); font-size: 10px; }
+.business-cloud .context-neighbor > svg { color: var(--muted); }
+.business-cloud .context-picker { display: none; }
+@media (min-width: 701px) {
+  .business-cloud.map-widget .focus-context { width: 240px; max-width: 34%; padding: 12px 10px; }
+  .map-widget .context-parent { padding: 9px; margin-top: 9px; }
+  .map-widget .context-parent strong { font-size: 12px; }
+  .map-widget .context-neighbor-heading { padding-top: 12px; }
+  .map-widget .context-neighbor { padding: 7px 5px; }
+}
+@media (max-width: 700px) {
+  .business-cloud .focus-context {
+    width: 100%; max-width: none; height: auto; min-height: 59px;
+    padding: 8px 10px; gap: 10px; flex-direction: row; align-items: center;
+  }
+  .business-cloud .context-parent { flex: 1; min-width: 0; width: auto; padding: 0; margin: 0; border: 0; background: none; gap: 7px; }
+  .business-cloud .context-parent .context-symbol { display: none; }
+  .business-cloud .context-parent strong { font-size: 11px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .business-cloud .context-parent small { margin-top: 3px; font-size: 9px; }
+  .business-cloud .context-neighbors, .business-cloud .context-neighbor-heading { display: none; }
+  .business-cloud .context-picker { display: block; width: 48%; font-size: 11px; padding: 8px 6px; }
+}

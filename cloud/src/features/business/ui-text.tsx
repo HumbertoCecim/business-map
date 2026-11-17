@@ -110,6 +110,7 @@ const english: Record<string, string> = {
   'SEU NEGÓCIO': 'YOUR BUSINESS', 'NOTA': 'NOTE', 'PROPOSTA PARA REVISAR': 'PROPOSAL TO REVIEW', 'item': 'item', 'itens': 'items',
   'na busca': 'in search', 'Revisar': 'Review', 'Explorar': 'Explore', 'Revisar proposta': 'Review proposal', 'Explorar este nível': 'Explore this level',
   'Nível anterior': 'Previous level', 'DE ONDE VOCÊ VEIO': 'WHERE YOU CAME FROM', 'Voltar para': 'Back to', 'Voltar um nível': 'Go back one level',
+  'Neste nível': 'At this level', 'Elementos do nível anterior': 'Previous level elements', 'Você está aqui': 'You are here', 'Navegar no nível anterior': 'Explore the previous level',
   'Você está em': 'You are at', 'Caminho no mapa': 'Map path', 'Resultados da busca': 'Search results', 'resultado no mapa': 'result on the map',
   'resultados no mapa': 'results on the map', 'Nenhum resultado no mapa': 'No results on the map', 'Seu negócio': 'Your business',
   'Refine a busca para encontrar os outros': 'Refine your search to find the other', 'itens.': 'items.',
