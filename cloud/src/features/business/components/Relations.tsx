@@ -2,14 +2,26 @@ import { useState } from 'react';
 import { Link2, Plus, Trash2 } from 'lucide-react';
 import type { Run, Snapshot } from '../api';
 import { uid } from '../api';
-
-export function Relations({ snapshot, run, origin, busy }: { snapshot: Snapshot; run: Run; origin?: string; busy: boolean }) {
-  const nodes = snapshot.board.sections.flatMap(section => [{ id: section.id, title: section.title }, ...section.cards]);
-  const [editing, setEditing] = useState(''), [from, setFrom] = useState(origin || nodes[0]?.id || ''), [to, setTo] = useState(''), [label, setLabel] = useState(''), [deleting, setDeleting] = useState('');
-  const relations = (snapshot.board.relations || []).filter(relation => !origin || relation.fromId === origin || relation.toId === origin);
-  if (nodes.length < 2 && !relations.length) return null;
-  return <section className="relation-manager"><div className="panel-section-title"><h3><Link2 size={14}/> Conexões <span>{relations.length}</span></h3></div>
-    {relations.map(relation => <div className="relation-line" key={relation.id}><button onClick={() => { setEditing(relation.id); setFrom(relation.fromId); setTo(relation.toId); setLabel(relation.label); }}>{relation.label || 'Conexão'}<small>{nodes.find(node => node.id === relation.fromId)?.title} → {nodes.find(node => node.id === relation.toId)?.title}</small></button><button className="icon-button" aria-label={deleting === relation.id ? 'Confirmar exclusão da conexão' : 'Excluir conexão'} disabled={busy} onClick={() => { if (deleting === relation.id) void run({ type: 'relation.delete', id: relation.id }); else setDeleting(relation.id); }}><Trash2 size={13}/></button></div>)}
-    <details className="form-details" open={!!editing || undefined}><summary>{editing ? 'Editar conexão' : 'Criar conexão'}</summary><form onSubmit={async event => { event.preventDefault(); if (await run({ type: 'relation.save', relation: { id: editing || uid('relation'), fromId: from, toId: to, label } })) { setEditing(''); setTo(''); setLabel(''); } }}><label className="field"><span>De</span><select required value={from} onChange={event => setFrom(event.target.value)}><option value="">Escolha uma área ou nota</option>{nodes.map(node => <option key={node.id} value={node.id}>{node.title}</option>)}</select></label><label className="field"><span>Para</span><select required value={to} onChange={event => setTo(event.target.value)}><option value="">Escolha uma área ou nota</option>{nodes.filter(node => node.id !== from).map(node => <option key={node.id} value={node.id}>{node.title}</option>)}</select></label><label className="field"><span>O que conecta estas ideias?</span><input maxLength={500} value={label} onChange={event => setLabel(event.target.value)}/></label><button type="submit" disabled={busy || !from || !to || from === to} className="secondary full"><Plus size={14}/>{editing ? 'Salvar conexão' : 'Criar conexão'}</button>{editing && <button type="button" className="text-button" onClick={() => { setEditing(''); setLabel(''); setTo(''); }}>Cancelar edição</button>}</form></details>
+export function Relations({ snapshot, run, origin, busy }: {
+    snapshot: Snapshot;
+    run: Run;
+    origin?: string;
+    busy: boolean;
+}) {
+    const nodes = snapshot.board.sections.flatMap(section => [{ id: section.id, title: section.title }, ...section.cards]);
+    const [editing, setEditing] = useState(''), [from, setFrom] = useState(origin || nodes[0]?.id || ''), [to, setTo] = useState(''), [label, setLabel] = useState(''), [deleting, setDeleting] = useState('');
+    const relations = (snapshot.board.relations || []).filter(relation => !origin || relation.fromId === origin || relation.toId === origin);
+    if (nodes.length < 2 && !relations.length)
+        return null;
+    return <section className="relation-manager"><div className="panel-section-title"><h3><Link2 size={14}/> Conexões <span>{relations.length}</span></h3></div>
+    {relations.map(relation => <div className="relation-line" key={relation.id}><button onClick={() => { setEditing(relation.id); setFrom(relation.fromId); setTo(relation.toId); setLabel(relation.label); }}>{relation.label || 'Conexão'}<small>{nodes.find(node => node.id === relation.fromId)?.title} → {nodes.find(node => node.id === relation.toId)?.title}</small></button><button className="icon-button" aria-label={deleting === relation.id ? 'Confirmar exclusão da conexão' : 'Excluir conexão'} disabled={busy} onClick={() => { if (deleting === relation.id)
+        void run({ type: 'relation.delete', id: relation.id });
+    else
+        setDeleting(relation.id); }}><Trash2 size={13}/></button></div>)}
+    <details className="form-details" open={!!editing || undefined}><summary>{editing ? 'Editar conexão' : 'Criar conexão'}</summary><form onSubmit={async (event) => { event.preventDefault(); if (await run({ type: 'relation.save', relation: { id: editing || uid('relation'), fromId: from, toId: to, label } })) {
+        setEditing('');
+        setTo('');
+        setLabel('');
+    } }}><label className="field"><span>De</span><select required value={from} onChange={event => setFrom(event.target.value)}><option value="">Escolha uma área ou nota</option>{nodes.map(node => <option key={node.id} value={node.id}>{node.title}</option>)}</select></label><label className="field"><span>Para</span><select required value={to} onChange={event => setTo(event.target.value)}><option value="">Escolha uma área ou nota</option>{nodes.filter(node => node.id !== from).map(node => <option key={node.id} value={node.id}>{node.title}</option>)}</select></label><label className="field"><span>O que conecta estas ideias?</span><input maxLength={500} value={label} onChange={event => setLabel(event.target.value)}/></label><button type="submit" disabled={busy || !from || !to || from === to} className="secondary full"><Plus size={14}/>{editing ? 'Salvar conexão' : 'Criar conexão'}</button>{editing && <button type="button" className="text-button" onClick={() => { setEditing(''); setLabel(''); setTo(''); }}>Cancelar edição</button>}</form></details>
   </section>;
 }
