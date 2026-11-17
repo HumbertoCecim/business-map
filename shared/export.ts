@@ -1,4 +1,5 @@
 import type { Board } from "./model";
+import { getPath } from "./hierarchy";
 function line(s: string) {
   return s.replace(/\r\n/g, "\n");
 }
@@ -24,6 +25,9 @@ export function exportMarkdown(b: Board): string {
       "",
       `## ${s.title}`,
       "",
+      ...(s.parentId && s.parentId !== b.boardId
+        ? [`Caminho: ${getPath(b, s.id).map((node) => node.title).join(" > ")}`, ""]
+        : []),
       s.questions,
       ...(s.sourceSuggestionId
         ? [

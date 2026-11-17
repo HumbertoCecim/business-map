@@ -1,0 +1,69 @@
+import { useState } from 'react';
+import { BookOpen, Check, Download, FileText, Layers3, LoaderCircle, Upload, X } from 'lucide-react';
+import type { Board } from '../../../business/model';
+import type { SkillVersion } from '../../../../../shared/evolution';
+import { api, uid, type Run, type Snapshot } from '../api';
+import { Modal } from './BusinessApp';
+
+type PackageFile = { path: string; encoding: 'utf8' | 'base64'; content: string };
+export type SkillPackage = { version: SkillVersion; files: PackageFile[] };
+type StoredPackage = SkillPackage & { available: boolean; manifestHash?: string };
+function download(content: string, name: string, type: string) {
+  const url = URL.createObjectURL(new Blob([content], { type })); const anchor = document.createElement('a');
+  anchor.href = url; anchor.download = name; anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+const message = (reason: unknown) => reason instanceof Error ? reason.message : String(reason);
+export function DataTools({ snapshot, onClose, onRefresh }: { snapshot: Snapshot; onClose: () => void; onRefresh: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false), [error, setError] = useState(''), [info, setInfo] = useState('');
+  const [raw, setRaw] = useState<unknown>(null), [preview, setPreview] = useState<{ board: Board; hash: string } | null>(null);
+  const empty = snapshot.board.revision === 0 && !snapshot.board.sections.length && !snapshot.board.suggestions.length && !snapshot.board.memories.length && !snapshot.board.skills.length && !snapshot.board.sessions.length && !snapshot.board.sources?.length && !snapshot.board.relations?.length;
+  const task = async (fn: () => Promise<void>) => { setBusy(true); setError(''); try { await fn(); } catch (reason) { setError(message(reason)); } finally { setBusy(false); } };
+  return <Modal title="Seus dados, com você" onClose={onClose}><p>Exporte uma cópia privada do seu negócio. O JSON preserva o mapa; o Markdown facilita a leitura. Pacotes completos de skills são exportados pela biblioteca.</p>
+    <div className="button-row">{(['json', 'markdown'] as const).map(format => <button key={format} className="secondary" disabled={busy} onClick={() => void task(async () => { const file = await api<{ content: string; filename: string; contentType: string }>('/api/business/export', { format }); download(file.content, file.filename, file.contentType); setInfo('Exportação preparada para download.'); })}><Download size={14}/> Exportar {format === 'json' ? 'JSON' : 'Markdown'}</button>)}</div>
+    <div className="soft-divider"/><h3>Importar uma cópia independente</h3><p className="small muted">A importação exige um negócio vazio. A cópia recebe uma nova identidade e não permanece conectada à origem. Referências de skills sem o pacote completo são sinalizadas como indisponíveis.</p>
+    {!empty && <p className="notice warning">Seu negócio já possui conteúdo. A importação não sobrescreve esse conteúdo.</p>}
+    <label className="field"><span>Arquivo JSON do mapa</span><input type="file" accept=".json,application/json" disabled={busy || !empty} onChange={event => { const file = event.target.files?.[0]; setPreview(null); setRaw(null); if (!file) return; void task(async () => { if (file.size > 10_000_000) throw new Error('Escolha um JSON de até 10 MB.'); const data: unknown = JSON.parse(await file.text()); setRaw(data); setPreview(await api('/api/business/import/preview', { board: data })); }); }}/></label>
+    {preview && <div className="skill-preview"><span className="eyebrow">PRÉVIA · NADA IMPORTADO AINDA</span><h3>{preview.board.title}</h3><p>{preview.board.sections.length} áreas · {preview.board.sections.reduce((sum, area) => sum + area.cards.length, 0)} notas · {preview.board.memories.length} memórias</p><details><summary>Examinar conteúdo completo</summary><pre>{JSON.stringify(preview.board, null, 2)}</pre></details><p className="hash">SHA-256 {preview.hash}</p><button className="primary" disabled={busy || !empty} onClick={() => void task(async () => { await api('/api/business/import/confirm', { operationId: uid(), board: raw, expectedHash: preview.hash }); await onRefresh(); setPreview(null); setInfo('Cópia independente importada.'); })}><Check size={14}/> Confirmar importação</button></div>}
+    {error && <p className="notice warning" role="alert">{error}</p>}{info && <p role="status" className="notice">{info}</p>}
+  </Modal>;
+}
+export function SkillLibrary({ snapshot, run, onRefresh }: { snapshot: Snapshot; run: Run; onRefresh: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false), [error, setError] = useState(''), [showImport, setShowImport] = useState(false);
+  const [preview, setPreview] = useState<StoredPackage | null>(null), [reading, setReading] = useState<StoredPackage | null>(null), [path, setPath] = useState('SKILL.md');
+  const task = async (fn: () => Promise<void>) => { setBusy(true); setError(''); try { await fn(); } catch (reason) { setError(message(reason)); } finally { setBusy(false); } };
+  const inspect = async (raw: SkillPackage) => setPreview(await api<StoredPackage>('/api/business/skills/preview', { package: raw }));
+  const currentFile = reading?.files?.find(file => file.path === path);
+  return <><div className="resource-intro"><span>{snapshot.board.skills.length} versões · {snapshot.board.selectedSkillVersionIds.length} selecionadas</span><button className="secondary" onClick={() => setShowImport(!showImport)}><Upload size={14}/> Importar pasta completa</button></div>
+    {error && <p role="alert" className="notice warning">{error}</p>}
+    {showImport && <section className="resource-form"><h2>Uma referência completa.</h2><p className="small muted">Selecione a pasta inteira com SKILL.md e seus recursos, ou um pacote JSON exportado. Revise o conteúdo e os hashes de todos os arquivos antes de importar. Os arquivos são referências; scripts não são executados.</p>
+      <label className="field"><span>Pasta da skill</span><input type="file" multiple {...{ webkitdirectory: '', directory: '' }} disabled={busy} onChange={event => { const files = Array.from(event.target.files || []); setPreview(null); if (files.length) void task(async () => inspect(await packageFolder(files))); }}/></label>
+      <label className="field"><span>Ou pacote completo em JSON</span><input type="file" accept=".json,application/json" disabled={busy} onChange={event => { const file = event.target.files?.[0]; setPreview(null); if (file) void task(async () => { if (file.size > 32_000_000) throw new Error('Pacote acima do limite de 32 MB.'); await inspect(JSON.parse(await file.text()) as SkillPackage); }); }}/></label>
+      {busy && <p><LoaderCircle size={15} className="spin"/> Verificando arquivos…</p>}
+      {preview && <section className="skill-preview"><span className="eyebrow">PRÉVIA · NADA IMPORTADO AINDA</span><h3>{preview.version.name}</h3><p>{preview.version.description}</p><p>{preview.version.files.length} arquivos · {preview.version.files.reduce((total, file) => total + file.size, 0)} bytes</p><p className="hash">SHA-256 da pasta {preview.version.treeHash}</p><details open><summary>Ler SKILL.md integral</summary><pre>{preview.files.find(file => file.path === 'SKILL.md')?.content}</pre></details><details open><summary>Manifesto completo da pasta</summary>{preview.version.files.map(file => <div className="file-manifest" key={file.path}><span>{file.path}</span><span>{file.size} B · {file.encoding}</span><small>{file.sha256}</small></div>)}</details><details><summary>Examinar todos os recursos</summary>{preview.files.map(file => <details key={file.path}><summary>{file.path}</summary><pre>{file.encoding === 'utf8' ? file.content : `Recurso binário · ${file.content.length} caracteres em base64`}</pre></details>)}</details><button className="primary" disabled={busy} onClick={() => void task(async () => { await api('/api/business/skills/import', { operationId: uid('skill'), baseRevision: snapshot.board.revision, package: { version: preview.version, files: preview.files }, expectedTreeHash: preview.version.treeHash }); setPreview(null); setShowImport(false); await onRefresh(); })}><Check size={14}/> Confirmar importação completa</button></section>}
+    </section>}
+    <div className="skill-list">{snapshot.board.skills.map(version => <article className={`skill-record ${snapshot.board.selectedSkillVersionIds.includes(version.id) ? 'is-active' : ''}`} key={version.id}><div className="skill-heading"><div className="skill-symbol"><BookOpen size={22}/></div><div><span className="eyebrow">VERSÃO {version.treeHash.slice(0, 8)}</span><h2>{version.name}</h2></div><label className="skill-active"><input type="checkbox" checked={snapshot.board.selectedSkillVersionIds.includes(version.id)} disabled={busy} onChange={() => void run({ type: 'skill.select', versionIds: snapshot.board.selectedSkillVersionIds.includes(version.id) ? snapshot.board.selectedSkillVersionIds.filter(id => id !== version.id) : [...snapshot.board.selectedSkillVersionIds, version.id] })}/> Usar</label></div><p>{version.description}</p><div className="skill-meta"><span>{version.files.length} arquivos</span><span>{new Date(version.createdAt).toLocaleDateString('pt-BR')}</span></div><div className="button-row"><button className="secondary" disabled={busy} onClick={() => void task(async () => { const result = await api<StoredPackage>(`/api/business/skills/${encodeURIComponent(version.id)}`); setReading(result); setPath('SKILL.md'); })}><FileText size={14}/> Ler recursos</button><button className="text-button" disabled={busy} onClick={() => void task(async () => { const result = await api<StoredPackage>(`/api/business/skills/${encodeURIComponent(version.id)}`); if (!result.available) throw new Error('Os arquivos desta versão não foram importados. Importe o pacote completo para exportar seus recursos.'); download(JSON.stringify({ version: result.version, files: result.files }, null, 2), `${version.name.replace(/[^\p{L}\p{N}-]/gu, '-')}.skill.json`, 'application/json'); })}><Download size={13}/> Exportar pacote</button></div></article>)}</div>
+    {!snapshot.board.skills.length && !showImport && <div className="empty-resource"><Layers3 size={29}/><h2>Referências que trabalham com você.</h2><p>Importe uma skill completa, leia todos os seus recursos e escolha quais compartilhar como contexto.</p></div>}
+    {reading && <section className="skill-reader"><div className="form-heading"><h2>{reading.version.name}</h2><button className="icon-button" aria-label="Fechar leitura" onClick={() => setReading(null)}><X size={16}/></button></div>{!reading.available ? <p role="status" className="notice warning">Arquivos indisponíveis nesta cópia. Importe o pacote completo correspondente a esta versão.</p> : <><label className="field"><span>Recurso da pasta</span><select value={path} onChange={event => setPath(event.target.value)}>{reading.files.map(file => <option key={file.path}>{file.path}</option>)}</select></label><pre className="skill-content">{currentFile?.encoding === 'utf8' ? currentFile.content : 'Recurso binário preservado no pacote exportável.'}</pre><p className="hash">SHA-256 {reading.version.files.find(file => file.path === path)?.sha256}</p></>}</section>}
+  </>;
+}
+const sha256 = async (input: Uint8Array | string) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', typeof input === 'string' ? new TextEncoder().encode(input) : input as BufferSource))).map(byte => byte.toString(16).padStart(2, '0')).join('');
+export async function packageFolder(files: File[]): Promise<SkillPackage> {
+  if (files.length > 400) throw new Error('Uma skill aceita até 400 arquivos.');
+  const entries: PackageFile[] = [], manifest: SkillVersion['files'] = []; let total = 0;
+  for (const file of files) {
+    const parts = (file.webkitRelativePath || file.name).split('/'); const path = parts.length > 1 ? parts.slice(1).join('/') : parts[0];
+    if (!path || path.split('/').some(part => !part || part === '.' || part === '..' || part.toLowerCase() === '.git') || /[\\:\x00-\x1f]/.test(path)) throw new Error(`Caminho inválido: ${path}`);
+    total += file.size; if (file.size > 2_000_000 || total > 20_000_000) throw new Error('Limite de 2 MB por arquivo e 20 MB por pasta.');
+    const bytes = new Uint8Array(await file.arrayBuffer()); let encoding: 'utf8' | 'base64' = 'utf8', content = '';
+    try { content = new TextDecoder('utf-8', { fatal: true }).decode(bytes); if (content.includes('\0')) throw new Error('binary'); }
+    catch { encoding = 'base64'; let binary = ''; for (const byte of bytes) binary += String.fromCharCode(byte); content = btoa(binary); }
+    entries.push({ path, encoding, content }); manifest.push({ path, encoding, size: bytes.byteLength, sha256: await sha256(bytes) });
+  }
+  manifest.sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0); entries.sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+  const skill = entries.find(entry => entry.path === 'SKILL.md' && entry.encoding === 'utf8'); if (!skill) throw new Error('A pasta precisa conter SKILL.md em UTF-8 na raiz.');
+  const treeHash = await sha256(JSON.stringify(manifest.map(({ path, size, sha256, encoding }) => ({ path, size, sha256, encoding }))));
+  const name = /^name:\s*["']?(.+?)["']?\s*$/m.exec(skill.content)?.[1] || files[0].webkitRelativePath.split('/')[0] || 'Skill importada';
+  const description = /^description:\s*["']?(.+?)["']?\s*$/m.exec(skill.content)?.[1] || '';
+  const skillId = `skill-${(await sha256(name)).slice(0, 20)}`;
+  return { version: { id: `${skillId}@${treeHash}`, skillId, name: name.slice(0, 500), description: description.slice(0, 3000), treeHash, files: manifest, sourcePath: '', sourceUrl: '', createdAt: new Date().toISOString(), parentVersionId: null, originalVersionId: null, rationale: '', diff: '' }, files: entries };
+}

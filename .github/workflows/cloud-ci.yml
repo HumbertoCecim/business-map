@@ -1,0 +1,54 @@
+name: Business Map Cloud
+
+on:
+  push:
+    branches: [main, 'feat/business-map-cloud-*']
+    paths: ['cloud/**', 'shared/**', 'package.json', 'package-lock.json', '.github/workflows/cloud-ci.yml']
+  pull_request:
+    paths: ['cloud/**', 'shared/**', 'package.json', 'package-lock.json', '.github/workflows/cloud-ci.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloud-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v5
+        with:
+          version: 10.33.1
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: cloud/pnpm-lock.yaml
+      - name: Install portable shared dependencies without the Paseo SDK
+        run: npm ci --omit=dev --ignore-scripts
+      - name: Install Cloud dependencies
+        run: pnpm --dir cloud install --frozen-lockfile
+      - name: Use reproducible placeholder configuration without secrets
+        run: cp cloud/wrangler.example.jsonc cloud/wrangler.jsonc
+      - name: Build application and MCP App
+        run: pnpm --dir cloud build
+      - name: Check types
+        run: pnpm --dir cloud typecheck:cloud
+      - name: Test domain, access, OAuth, MCP and widget transport
+        run: pnpm --dir cloud test
+      - name: Install browser
+        run: pnpm --dir cloud exec playwright install --with-deps chromium
+      - name: Test map and embedded review
+        run: pnpm --dir cloud test:ui
+      - name: Preserve browser failure details
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-browser-failures
+          path: cloud/widget/test-results/
+          if-no-files-found: ignore

@@ -1,0 +1,210 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "business-map-cloud-staging",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-07-02",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "observability": {
+    "enabled": false
+  },
+  "preview_urls": false,
+  "assets": {
+    "binding": "ASSETS"
+  },
+  "env": {
+    "staging": {
+      "name": "business-map-cloud-staging",
+      "vars": {
+        "BETTER_AUTH_URL": "https://business-map-cloud-staging.humbertocljunior.workers.dev",
+        "PUBLIC_APP_URL": "https://business-map-cloud-staging.humbertocljunior.workers.dev",
+        "PILOT_REQUIRE_EMAIL_VERIFICATION": "true",
+        "EMAIL_FROM": "",
+        "GOOGLE_CLIENT_ID": "",
+        "GITHUB_CLIENT_ID": "",
+        "STRIPE_PRICE_PRO_MONTHLY": "",
+        "STRIPE_PRICE_PRO_YEARLY": "",
+        "STRIPE_PRICE_PRO_LIFETIME": "",
+        "TURNSTILE_SITE_KEY": "",
+        "CF_ANALYTICS_TOKEN": "",
+        "SENTRY_DSN": "",
+        "RESEND_AUDIENCE_ID": ""
+      },
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "BUSINESS_OBJECTS",
+            "class_name": "BusinessObject"
+          }
+        ]
+      },
+      "migrations": [
+        {
+          "tag": "business-v1",
+          "new_sqlite_classes": [
+            "BusinessObject"
+          ]
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "business-map-cloud-staging",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "drizzle"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "CACHE",
+          "id": "00000000000000000000000000000000"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "SKILL_PACKAGES",
+          "bucket_name": "business-map-skills-staging"
+        },
+        {
+          "binding": "BUCKET",
+          "bucket_name": "business-map-skills-staging"
+        }
+      ],
+      "services": [
+        {
+          "binding": "AUTH",
+          "service": "business-map-auth-staging",
+          "entrypoint": "OAuthBinding"
+        }
+      ]
+    },
+    "production": {
+      "name": "business-map-cloud-production",
+      "vars": {
+        "BETTER_AUTH_URL": "https://business-map.example.com",
+        "PUBLIC_APP_URL": "https://business-map.example.com",
+        "PILOT_REQUIRE_EMAIL_VERIFICATION": "true",
+        "EMAIL_FROM": "",
+        "GOOGLE_CLIENT_ID": "",
+        "GITHUB_CLIENT_ID": "",
+        "STRIPE_PRICE_PRO_MONTHLY": "",
+        "STRIPE_PRICE_PRO_YEARLY": "",
+        "STRIPE_PRICE_PRO_LIFETIME": "",
+        "TURNSTILE_SITE_KEY": "",
+        "CF_ANALYTICS_TOKEN": "",
+        "SENTRY_DSN": "",
+        "RESEND_AUDIENCE_ID": ""
+      },
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "BUSINESS_OBJECTS",
+            "class_name": "BusinessObject"
+          }
+        ]
+      },
+      "migrations": [
+        {
+          "tag": "business-v1",
+          "new_sqlite_classes": [
+            "BusinessObject"
+          ]
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "business-map-cloud-production",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "drizzle"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "CACHE",
+          "id": "00000000000000000000000000000000"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "SKILL_PACKAGES",
+          "bucket_name": "business-map-skills-production"
+        },
+        {
+          "binding": "BUCKET",
+          "bucket_name": "business-map-skills-production"
+        }
+      ],
+      "services": [
+        {
+          "binding": "AUTH",
+          "service": "business-map-auth-production",
+          "entrypoint": "OAuthBinding"
+        }
+      ]
+    }
+  },
+  "vars": {
+    "BETTER_AUTH_URL": "https://business-map-cloud-staging.humbertocljunior.workers.dev",
+    "PUBLIC_APP_URL": "https://business-map-cloud-staging.humbertocljunior.workers.dev",
+    "PILOT_REQUIRE_EMAIL_VERIFICATION": "true",
+    "EMAIL_FROM": "",
+    "GOOGLE_CLIENT_ID": "",
+    "GITHUB_CLIENT_ID": "",
+    "STRIPE_PRICE_PRO_MONTHLY": "",
+    "STRIPE_PRICE_PRO_YEARLY": "",
+    "STRIPE_PRICE_PRO_LIFETIME": "",
+    "TURNSTILE_SITE_KEY": "",
+    "CF_ANALYTICS_TOKEN": "",
+    "SENTRY_DSN": "",
+    "RESEND_AUDIENCE_ID": ""
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "BUSINESS_OBJECTS",
+        "class_name": "BusinessObject"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "business-v1",
+      "new_sqlite_classes": [
+        "BusinessObject"
+      ]
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "business-map-cloud-staging",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "00000000000000000000000000000000"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "SKILL_PACKAGES",
+      "bucket_name": "business-map-skills-staging"
+    },
+    {
+      "binding": "BUCKET",
+      "bucket_name": "business-map-skills-staging"
+    }
+  ],
+  "services": [
+    {
+      "binding": "AUTH",
+      "service": "business-map-auth-staging",
+      "entrypoint": "OAuthBinding"
+    }
+  ]
+}

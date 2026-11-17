@@ -1,0 +1,53 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": {
+    "enabled": false
+  },
+  "name": "business-map-auth-production",
+  "kv_namespaces": [
+    {
+      "binding": "OAUTH_KV",
+      "id": "00000000000000000000000000000000"
+    }
+  ],
+  "vars": {
+    "OAUTH_ISSUER": "https://business-map.example.com",
+    "MCP_SERVER_URL": "https://business-map.example.com/mcp"
+  },
+  "env": {
+    "staging": {
+      "name": "business-map-auth-staging",
+      "kv_namespaces": [
+        {
+          "binding": "OAUTH_KV",
+          "id": "00000000000000000000000000000000"
+        }
+      ],
+      "vars": {
+        "OAUTH_ISSUER": "https://business-map-cloud-staging.humbertocljunior.workers.dev",
+        "MCP_SERVER_URL": "https://business-map-cloud-staging.humbertocljunior.workers.dev/mcp"
+      }
+    },
+    "production": {
+      "name": "business-map-auth-production",
+      "kv_namespaces": [
+        {
+          "binding": "OAUTH_KV",
+          "id": "00000000000000000000000000000000"
+        }
+      ],
+      "vars": {
+        "OAUTH_ISSUER": "https://business-map.example.com",
+        "MCP_SERVER_URL": "https://business-map.example.com/mcp"
+      }
+    }
+  }
+}

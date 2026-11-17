@@ -1,0 +1,40 @@
+// Isolated browser harness for the real manual UI. All business data is supplied by Playwright routes.
+import { createServer } from 'node:http';
+import { build } from 'esbuild';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { readFile } from 'node:fs/promises';
+const here = dirname(fileURLToPath(import.meta.url));
+const built = await build({ stdin: { contents: `import React from 'react';import{createRoot}from'react-dom/client';import{BusinessApp}from'./src/features/business/components/BusinessApp';createRoot(document.getElementById('root')).render(<BusinessApp/>);`, resolveDir: resolve(here, '..'), sourcefile: 'ui-test.tsx', loader: 'tsx' }, bundle: true, write: false, format: 'iife', jsx: 'automatic', outfile: 'ui-test.js', define: { 'process.env.NODE_ENV': '"production"' } });
+const script = built.outputFiles.find(file => file.path.endsWith('.js')).text, css = built.outputFiles.find(file => file.path.endsWith('.css')).text;
+const html = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>.dark{--muted:#11141b;--border:#232733;--dot:rgba(180,187,201,.1)}</style><link rel="stylesheet" href="/ui-test.css"></head><body style="margin:0"><div id="root"></div><script src="/ui-test.js"></script></body></html>';
+const host = await build({ stdin: { contents: `
+import { AppBridge, PostMessageTransport } from '@modelcontextprotocol/ext-apps/app-bridge';
+const frame = document.getElementById('map-frame');
+let context = { theme: new URL(location.href).searchParams.get('theme') || 'light', displayMode: 'inline', availableDisplayModes: ['inline', 'fullscreen'] };
+const bridge = new AppBridge(null, { name: 'BusinessMap browser test host', version: '1.0.0' }, { serverTools: {} }, { hostContext: context });
+let inlineHeight = 650;
+bridge.onsizechange = ({ height }) => {
+  if (height == null) return;
+  document.body.dataset.resizeCount = String(Number(document.body.dataset.resizeCount || 0) + 1);
+  document.body.dataset.reportedHeight = String(height);
+  if (context.displayMode === 'inline') {
+    inlineHeight = height;
+    // Exercise the real host/app feedback path; the ceiling only contains a broken test app.
+    frame.style.height = Math.min(height, 4000) + 'px';
+  }
+};
+bridge.oncalltool = async params => (await fetch('/test-tool', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) })).json();
+bridge.onrequestdisplaymode = async ({ mode }) => {
+  context = { ...context, displayMode: mode };
+  frame.style.height = (mode === 'fullscreen' ? Math.max(300, window.innerHeight - 50) : inlineHeight) + 'px';
+  bridge.setHostContext(context);
+  document.body.dataset.display = mode;
+  return { mode };
+};
+bridge.connect(new PostMessageTransport(frame.contentWindow, frame.contentWindow)).then(() => frame.src = '/widget-frame');
+`, resolveDir: resolve(here, '..'), sourcefile: 'widget-host.ts', loader: 'ts' }, bundle: true, write: false, format: 'iife', target: 'es2022', outfile: 'widget-host.js' });
+const hostScript = host.outputFiles[0].text;
+const hostHtml = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#f7f7f2;padding:25px"><iframe id="map-frame" title="Business Map inline app" style="width:100%;height:650px;border:0"></iframe><script src="/widget-host.js"></script></body></html>';
+const widget = await readFile(resolve(here, 'dist/map.html'), 'utf8');
+createServer((request, response) => { const path = request.url?.split('?')[0]; response.setHeader('Content-Type', path?.endsWith('.js') ? 'text/javascript' : path?.endsWith('.css') ? 'text/css' : 'text/html'); if (path === '/widget-frame') response.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'"); response.end(path === '/ui-test.js' ? script : path === '/ui-test.css' ? css : path === '/widget-host.js' ? hostScript : path === '/widget-host' ? hostHtml : path === '/widget-frame' ? widget : html); }).listen(3091, '127.0.0.1');

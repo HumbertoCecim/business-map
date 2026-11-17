@@ -22,7 +22,8 @@
     ".local",
     "web",
     "build",
-    "dist"
+    "dist",
+    "cloud"
   ],
   "include": [
     "**/*.ts",
