@@ -1,0 +1,2614 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GrowYourPlan — O que faço agora?</title>
+  <style>
+    /* ==========================================================================
+       DESIGN SYSTEM & TOKENS (Base de Alto Contraste AA, Fontes >= 14px)
+       ========================================================================== */
+    :root {
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+
+      /* Tema Claro (Papel Quente, Verde Sálvia Botânico, Acentos Distintos) */
+      --bg-app: #f7f6f0;
+      --bg-surface: #ffffff;
+      --bg-subtle: #f0efe8;
+      --bg-elevated: #ffffff;
+      --border-subtle: #e3e1d6;
+      --border-strong: #cfcbbe;
+      
+      --text-main: #1f271e;
+      --text-muted: #576355;
+      --text-soft: #7a8778;
+
+      /* Cores de Ramos (Âncoras Espaciais para TDAH) */
+      --color-sage: #3f5d37;
+      --color-sage-bg: #eaf2e7;
+      --color-sage-border: #92b588;
+
+      --color-freelance: #a65228;
+      --color-freelance-bg: #faeee7;
+      --color-freelance-border: #e6a787;
+
+      --color-curso: #235d8e;
+      --color-curso-bg: #e7f1fa;
+      --color-curso-border: #8ab6dc;
+
+      --color-saas: #2c6e49;
+      --color-saas-bg: #e7f5ed;
+      --color-saas-border: #7ec49e;
+
+      --color-warning: #9e6417;
+      --color-warning-bg: #fdf5ea;
+      
+      --shadow-sm: 0 1px 3px rgba(31, 39, 30, 0.05), 0 1px 2px rgba(31, 39, 30, 0.03);
+      --shadow-md: 0 4px 12px rgba(31, 39, 30, 0.07), 0 1px 3px rgba(31, 39, 30, 0.04);
+      --shadow-lg: 0 12px 28px rgba(31, 39, 30, 0.10), 0 4px 10px rgba(31, 39, 30, 0.05);
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+    }
+
+    [data-theme="dark"] {
+      --bg-app: #151814;
+      --bg-surface: #1e231d;
+      --bg-subtle: #272d25;
+      --bg-elevated: #262c24;
+      --border-subtle: #343c32;
+      --border-strong: #485445;
+
+      --text-main: #edf2eb;
+      --text-muted: #a3b29f;
+      --text-soft: #798875;
+
+      --color-sage: #8ab780;
+      --color-sage-bg: #22331f;
+      --color-sage-border: #4d6e44;
+
+      --color-freelance: #e68d60;
+      --color-freelance-bg: #38241b;
+      --color-freelance-border: #75442d;
+
+      --color-curso: #6eaee3;
+      --color-curso-bg: #192b3a;
+      --color-curso-border: #2f5575;
+
+      --color-saas: #6dc493;
+      --color-saas-bg: #183324;
+      --color-saas-border: #2c6344;
+
+      --color-warning: #e3aa52;
+      --color-warning-bg: #362916;
+
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+      --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.50);
+    }
+
+    /* Reset e Acessibilidade */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      font-size: 15px; /* >= 14px para leitura sem esforço */
+      line-height: 1.55;
+      color: var(--text-main);
+      background-color: var(--bg-app);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    button, input, textarea, select {
+      font-family: inherit;
+      font-size: 14px;
+      color: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      background: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: var(--radius-sm);
+      transition: all 0.15s ease;
+    }
+
+    button:focus-visible, a:focus-visible {
+      outline: 2px solid var(--color-sage);
+      outline-offset: 2px;
+    }
+
+    /* ==========================================================================
+       CABECALHO & BARRA GLOBAL
+       ========================================================================== */
+    .topbar {
+      height: 64px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: var(--text-main);
+      font-weight: 700;
+      font-size: 17px;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-logo svg {
+      width: 26px;
+      height: 26px;
+      color: var(--color-sage);
+    }
+
+    .brand-badge {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+      background: var(--bg-subtle);
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .mcp-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .mcp-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--color-sage);
+      box-shadow: 0 0 0 2px var(--color-sage-bg);
+      animation: pulse 2.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    .actions-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Botão Desfazer Onipresente */
+    .btn-undo {
+      padding: 7px 12px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      color: var(--text-main);
+      font-weight: 500;
+      font-size: 13px;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-undo:hover:not(:disabled) {
+      background: var(--bg-subtle);
+      border-color: var(--border-strong);
+    }
+
+    .btn-undo:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-close-day {
+      background: var(--color-sage-bg);
+      color: var(--color-sage);
+      border: 1px solid var(--color-sage-border);
+      padding: 7px 14px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .btn-close-day:hover {
+      filter: brightness(0.96);
+    }
+
+    .btn-theme-toggle {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-theme-toggle:hover {
+      color: var(--text-main);
+      background: var(--bg-subtle);
+    }
+
+    .btn-sim-mcp {
+      padding: 7px 11px;
+      font-size: 12px;
+      background: var(--bg-subtle);
+      border: 1px dashed var(--border-strong);
+      color: var(--text-muted);
+    }
+
+    .btn-sim-mcp.active {
+      background: var(--color-sage);
+      color: #fff;
+      border-style: solid;
+    }
+
+    /* ==========================================================================
+       NAVEGACAO PRINCIPAL (3 PILARES SIMPLIFICADOS)
+       ========================================================================== */
+    .nav-bar {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: center;
+      padding: 0 16px;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-tab {
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      position: relative;
+      border-radius: 0;
+      border-bottom: 2px solid transparent;
+    }
+
+    .nav-tab:hover {
+      color: var(--text-main);
+      background: var(--bg-subtle);
+    }
+
+    .nav-tab.active {
+      color: var(--color-sage);
+      border-bottom-color: var(--color-sage);
+    }
+
+    .nav-badge {
+      background: var(--color-warning);
+      color: #ffffff;
+      font-size: 11px;
+      padding: 1px 6px;
+      border-radius: var(--radius-full);
+      margin-left: 6px;
+      font-weight: 700;
+    }
+
+    /* ==========================================================================
+       CONTAINER PRINCIPAL & MODO MCP (600px Widget)
+       ========================================================================== */
+    .app-main {
+      flex: 1;
+      max-width: 1180px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Quando simula a janela de 600px do ChatGPT */
+    .mcp-container-simulation {
+      max-width: 820px;
+      margin: 16px auto;
+      border: 2px solid var(--color-sage);
+      border-radius: var(--radius-lg);
+      height: 600px;
+      overflow-y: auto;
+      background: var(--bg-surface);
+      box-shadow: var(--shadow-lg);
+      position: relative;
+    }
+
+    .mcp-simulation-banner {
+      background: var(--color-sage);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* ==========================================================================
+       TELA 1: "O QUE FAÇO AGORA?" (Foco e Retomada Diária)
+       ========================================================================== */
+    .view-content {
+      display: none;
+      animation: fadeIn 0.2s ease forwards;
+    }
+
+    .view-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Barra Botânica de Crescimento sem Culpa */
+    .growth-strip {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .growth-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .growth-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--color-sage-bg);
+      color: var(--color-sage);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .growth-text h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .growth-text p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .growth-progress-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 220px;
+    }
+
+    .growth-bar {
+      flex: 1;
+      height: 8px;
+      background: var(--bg-subtle);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+
+    .growth-fill {
+      height: 100%;
+      background: var(--color-sage);
+      width: 65%;
+      border-radius: var(--radius-full);
+      transition: width 0.4s ease;
+    }
+
+    .growth-score {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* Card Onde Parei (Retomada Instantânea) */
+    .where-stopped-card {
+      background: var(--color-warning-bg);
+      border: 1px solid #eccb94;
+      border-left: 5px solid var(--color-warning);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    [data-theme="dark"] .where-stopped-card {
+      border-color: #59421f;
+      border-left-color: var(--color-warning);
+    }
+
+    .where-stopped-main {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .where-stopped-main svg {
+      width: 22px;
+      height: 22px;
+      color: var(--color-warning);
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .where-stopped-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--color-warning);
+      margin-bottom: 2px;
+    }
+
+    .where-stopped-text {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .btn-resume {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-resume:hover {
+      background: var(--bg-subtle);
+    }
+
+    /* Grid do Foco Heroico */
+    .focus-hero-grid {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 860px) {
+      .focus-hero-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* O Grande Próximo Passo */
+    .hero-card {
+      background: var(--bg-surface);
+      border: 2px solid var(--color-sage);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .hero-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .hero-badge-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      background: var(--color-freelance-bg);
+      color: var(--color-freelance);
+      border: 1px solid var(--color-freelance-border);
+    }
+
+    .hero-label-top {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--color-sage);
+    }
+
+    .hero-title {
+      font-size: 24px;
+      font-weight: 750;
+      letter-spacing: -0.5px;
+      color: var(--text-main);
+      margin-bottom: 16px;
+      line-height: 1.3;
+    }
+
+    /* O Primeiro Passo em Destaque */
+    .hero-first-step-box {
+      background: var(--color-sage-bg);
+      border: 1px solid var(--color-sage-border);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      margin-bottom: 24px;
+    }
+
+    .first-step-tag {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.9px;
+      text-transform: uppercase;
+      color: var(--color-sage);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .first-step-content {
+      font-size: 18px; /* Grande para quebrar a paralisia */
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.4;
+    }
+
+    /* Filtro de Energia contra Cegueira de Tempo */
+    .energy-filter-group {
+      margin-bottom: 24px;
+    }
+
+    .energy-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .energy-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-energy {
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-subtle);
+      color: var(--text-muted);
+      border-radius: var(--radius-full);
+    }
+
+    .btn-energy.active {
+      background: var(--text-main);
+      color: var(--bg-surface);
+      border-color: var(--text-main);
+    }
+
+    .energy-note {
+      font-size: 12px;
+      color: var(--text-soft);
+      margin-top: 6px;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .btn-primary-action {
+      background: var(--color-sage);
+      color: #ffffff;
+      padding: 12px 24px;
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: var(--radius-md);
+      box-shadow: 0 2px 6px rgba(63, 93, 55, 0.25);
+    }
+
+    .btn-primary-action:hover {
+      filter: brightness(1.1);
+    }
+
+    .btn-unstuck {
+      background: var(--bg-subtle);
+      color: var(--text-main);
+      border: 1px solid var(--border-strong);
+      padding: 12px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+    }
+
+    .btn-unstuck:hover {
+      background: var(--bg-surface);
+      border-color: var(--color-sage);
+    }
+
+    /* Destravador do ChatGPT (Gaveta expansível) */
+    .unstuck-box {
+      display: none;
+      background: var(--bg-subtle);
+      border: 1px dashed var(--color-sage);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-top: 16px;
+    }
+
+    .unstuck-box.active {
+      display: block;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .unstuck-header {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--color-sage);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .micro-steps-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .micro-step-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      background: var(--bg-surface);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      font-size: 14px;
+    }
+
+    /* Coluna Lateral: Mini Radar e Outros Focos */
+    .hero-side-column {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .radar-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .radar-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .radar-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .radar-svg-container {
+      width: 100%;
+      height: 160px;
+      background: var(--bg-subtle);
+      border-radius: var(--radius-md);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .radar-hint {
+      position: absolute;
+      bottom: 8px;
+      font-size: 11px;
+      color: var(--text-soft);
+      background: rgba(255, 255, 255, 0.7);
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+    }
+
+    [data-theme="dark"] .radar-hint {
+      background: rgba(30, 35, 29, 0.7);
+    }
+
+    /* Outros Itens do Foco (Limite 3) */
+    .focus-queue-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      flex: 1;
+    }
+
+    .queue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .queue-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .queue-limit-select {
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-subtle);
+    }
+
+    .queue-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .queue-item {
+      padding: 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-subtle);
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+
+    .queue-item:hover {
+      background: var(--bg-surface);
+      border-color: var(--border-strong);
+    }
+
+    .queue-item.current {
+      border-color: var(--color-sage);
+      background: var(--color-sage-bg);
+    }
+
+    .queue-item-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+
+    .queue-tag {
+      font-weight: 600;
+      border-radius: 4px;
+      padding: 1px 6px;
+    }
+
+    .queue-tag.freelance {
+      background: var(--color-freelance-bg);
+      color: var(--color-freelance);
+    }
+
+    .queue-tag.curso {
+      background: var(--color-curso-bg);
+      color: var(--color-curso);
+    }
+
+    .queue-tag.saas {
+      background: var(--color-saas-bg);
+      color: var(--color-saas);
+    }
+
+    .queue-item-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .queue-item-step {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* ==========================================================================
+       TELA 2: FLUXO DESPEJO MENTAL -> PROPOSTA IA -> ACEITAR
+       ========================================================================== */
+    .dump-flow-container {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .dump-steps-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .dump-step-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-soft);
+    }
+
+    .dump-step-indicator.active {
+      color: var(--color-sage);
+    }
+
+    .step-circle {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .dump-step-indicator.active .step-circle {
+      background: var(--color-sage);
+      color: #fff;
+      border-color: var(--color-sage);
+    }
+
+    .step-divider {
+      width: 40px;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    /* Etapa 1: Caixa de Despejo */
+    .dump-input-stage {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .dump-title {
+      font-size: 26px;
+      font-weight: 750;
+      letter-spacing: -0.6px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .dump-desc {
+      font-size: 15px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .dump-textarea-wrap {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .dump-textarea {
+      width: 100%;
+      height: 170px;
+      padding: 18px;
+      font-size: 15px;
+      line-height: 1.6;
+      border-radius: var(--radius-md);
+      border: 2px solid var(--border-strong);
+      background: var(--bg-subtle);
+      color: var(--text-main);
+      resize: vertical;
+    }
+
+    .dump-textarea:focus {
+      outline: none;
+      border-color: var(--color-sage);
+      background: var(--bg-surface);
+    }
+
+    .dump-helpers {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn-sample-fill {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-sage);
+      background: var(--color-sage-bg);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-sample-fill:hover {
+      filter: brightness(0.96);
+    }
+
+    .btn-voice-input {
+      font-size: 13px;
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-voice-input:hover {
+      background: var(--bg-subtle);
+    }
+
+    .btn-transform {
+      width: 100%;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 700;
+      background: var(--color-sage);
+      color: #fff;
+      border-radius: var(--radius-md);
+      box-shadow: 0 4px 12px rgba(63, 93, 55, 0.25);
+    }
+
+    .btn-transform:hover {
+      filter: brightness(1.08);
+    }
+
+    /* Etapa 2: Processando (Calmo e Elegante) */
+    .dump-processing-stage {
+      display: none;
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .dump-processing-stage.active {
+      display: block;
+    }
+
+    .pulse-sprout {
+      width: 64px;
+      height: 64px;
+      color: var(--color-sage);
+      margin: 0 auto 20px;
+      animation: gentle-breath 2s infinite ease-in-out;
+    }
+
+    @keyframes gentle-breath {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 1; }
+    }
+
+    .processing-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .processing-sub {
+      font-size: 14px;
+      color: var(--text-muted);
+      max-width: 440px;
+      margin: 0 auto;
+    }
+
+    /* Etapa 3: Antes vs Depois & Aprovação */
+    .dump-review-stage {
+      display: none;
+    }
+
+    .dump-review-stage.active {
+      display: block;
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    @media (max-width: 860px) {
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .comp-col {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .comp-col-header {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 12px;
+      color: var(--text-soft);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .comp-before-text {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      flex: 1;
+      white-space: pre-wrap;
+    }
+
+    .proposed-branches {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .proposed-branch-card {
+      background: var(--bg-surface);
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      position: relative;
+    }
+
+    .proposed-branch-card.freelance { border-color: var(--color-freelance-border); background: var(--color-freelance-bg); }
+    .proposed-branch-card.curso { border-color: var(--color-curso-border); background: var(--color-curso-bg); }
+    .proposed-branch-card.saas { border-color: var(--color-saas-border); background: var(--color-saas-bg); }
+
+    .branch-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .branch-title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .branch-first-step {
+      font-size: 13px;
+      color: var(--text-main);
+      margin-top: 4px;
+    }
+
+    .review-action-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      background: var(--color-sage-bg);
+      border: 1px solid var(--color-sage-border);
+      border-radius: var(--radius-md);
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .review-info h4 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--color-sage);
+    }
+
+    .review-info p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .review-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-accept-all {
+      background: var(--color-sage);
+      color: #fff;
+      padding: 12px 24px;
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-accept-all:hover {
+      filter: brightness(1.1);
+    }
+
+    .btn-discard-all {
+      background: var(--bg-surface);
+      color: var(--text-muted);
+      border: 1px solid var(--border-strong);
+      padding: 12px 18px;
+      font-size: 14px;
+    }
+
+    /* ==========================================================================
+       TELA 3: MAPA RADIAL HIERÁRQUICO (Visual Espacial com Cores)
+       ========================================================================== */
+    .map-screen-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .map-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .map-breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .breadcrumb-item {
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .breadcrumb-item:hover {
+      color: var(--color-sage);
+    }
+
+    .breadcrumb-item.current {
+      color: var(--text-main);
+      font-weight: 700;
+    }
+
+    .depth-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-soft);
+    }
+
+    .map-filters {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .map-filter-btn {
+      padding: 5px 12px;
+      font-size: 13px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-subtle);
+      color: var(--text-muted);
+    }
+
+    .map-filter-btn.active {
+      background: var(--color-sage);
+      color: #fff;
+      border-color: var(--color-sage);
+    }
+
+    /* Área de Canvas do Mapa com Lateral "De onde você veio" */
+    .map-canvas-layout {
+      display: grid;
+      grid-template-columns: 200px 1fr 280px;
+      gap: 16px;
+      height: 640px;
+    }
+
+    @media (max-width: 980px) {
+      .map-canvas-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+    }
+
+    /* Painel Esquerdo: "De onde você veio" */
+    .parent-context-panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .parent-context-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text-soft);
+      margin-bottom: 12px;
+    }
+
+    .parent-nav-btn {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      background: var(--bg-subtle);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      text-align: left;
+      margin-bottom: 16px;
+    }
+
+    .parent-nav-btn:hover {
+      background: var(--bg-surface);
+      border-color: var(--color-sage);
+    }
+
+    .parent-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .parent-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .parent-mini-diagram {
+      width: 100%;
+      height: 120px;
+      background: var(--bg-subtle);
+      border-radius: var(--radius-sm);
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Canvas Central do Mapa Radial (SVG Interativo) */
+    .radial-viewport {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .radial-svg {
+      width: 100%;
+      height: 100%;
+      min-height: 580px;
+    }
+
+    /* Nós Interativos do SVG */
+    .node-hub {
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .node-hub:hover {
+      filter: brightness(1.05);
+    }
+
+    .node-orbit {
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .node-orbit:hover {
+      transform: scale(1.03);
+    }
+
+    .node-orbit.is-proposal {
+      stroke-dasharray: 6 4;
+      animation: dash-rotate 20s linear infinite;
+    }
+
+    @keyframes dash-rotate {
+      to { stroke-dashoffset: 100; }
+    }
+
+    /* Painel Direito de Detalhes do Nó Selecionado */
+    .inspector-panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .inspector-header {
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 16px;
+    }
+
+    .inspector-kind-badge {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-soft);
+      margin-bottom: 4px;
+    }
+
+    .inspector-title {
+      font-size: 18px;
+      font-weight: 750;
+      color: var(--text-main);
+      line-height: 1.3;
+    }
+
+    .inspector-body {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      flex: 1;
+    }
+
+    .inspector-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .inspector-field-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .inspector-field-value {
+      font-size: 14px;
+      color: var(--text-main);
+    }
+
+    .inspector-actions {
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .btn-drilldown {
+      width: 100%;
+      background: var(--color-sage);
+      color: #fff;
+      padding: 10px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-drilldown:hover {
+      filter: brightness(1.1);
+    }
+
+    /* ==========================================================================
+       MODAIS (Fechar o Dia, Feedback, etc.)
+       ========================================================================== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(18, 22, 17, 0.6);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+      animation: fadeIn 0.15s ease;
+    }
+
+    .modal-window {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      max-width: 480px;
+      width: 100%;
+      padding: 28px;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+    }
+
+    .modal-close-btn {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 32px;
+      height: 32px;
+      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+    }
+
+    .modal-close-btn:hover {
+      background: var(--bg-subtle);
+      color: var(--text-main);
+    }
+
+    .modal-icon-header {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--color-sage-bg);
+      color: var(--color-sage);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 750;
+      margin-bottom: 8px;
+    }
+
+    .modal-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-strong);
+      background: var(--bg-subtle);
+      color: var(--text-main);
+      margin-bottom: 20px;
+    }
+
+    .modal-input:focus {
+      outline: 2px solid var(--color-sage);
+      border-color: var(--color-sage);
+      background: var(--bg-surface);
+    }
+
+    .modal-btn-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* Notificação Toast Flutuante */
+    .toast-notice {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--text-main);
+      color: var(--bg-surface);
+      padding: 14px 20px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: var(--shadow-lg);
+      display: none;
+      align-items: center;
+      gap: 12px;
+      z-index: 120;
+      animation: slideUp 0.25s ease;
+    }
+
+    .toast-notice.active {
+      display: flex;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .btn-toast-undo {
+      background: rgba(255, 255, 255, 0.2);
+      color: inherit;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .btn-toast-undo:hover {
+      background: rgba(255, 255, 255, 0.35);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================================
+       TOPO: IDENTIDADE, MCP STATUS, DESFAZER E FECHAR O DIA
+       ======================================================================== -->
+  <header class="topbar">
+    <div class="brand-group">
+      <a href="#" class="brand-logo" onclick="switchTab('today'); return false;">
+        <!-- Broto Botânico SVG Autossuficiente -->
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 26V13"/>
+          <path d="M14 17C6 17 4 10 5 4c7 0 11 4 9 13Z"/>
+          <path d="M14 13C14 6 19 2 25 2c1 7-3 12-11 11Z"/>
+        </svg>
+        <span>Grow<span style="font-weight: 400; opacity: 0.85;">YourPlan</span></span>
+      </a>
+      <span class="brand-badge">Ritual Diário</span>
+      
+      <div class="mcp-indicator" title="Conexão com ChatGPT ativa via MCP">
+        <span class="mcp-dot"></span>
+        <span>ChatGPT MCP</span>
+      </div>
+    </div>
+
+    <div class="actions-group">
+      <!-- Botão Desfazer Onipresente -->
+      <button id="btn-undo" class="btn-undo" disabled onclick="triggerUndo()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
+        </svg>
+        <span id="undo-text">Desfazer</span>
+      </button>
+
+      <!-- Botão Fechar o Dia em 5 Segundos -->
+      <button class="btn-close-day" onclick="openCloseDayModal()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+        </svg>
+        <span>Fechar o dia (5s)</span>
+      </button>
+
+      <!-- Botão Simular Widget MCP do ChatGPT (600px) -->
+      <button id="btn-toggle-widget" class="btn-sim-mcp" onclick="toggleWidgetMode()" title="Simular como o mapa aparece dentro do ChatGPT em widget de 600px">
+        📱 Widget 600px
+      </button>
+
+      <!-- Alternador de Tema Claro / Escuro -->
+      <button class="btn-theme-toggle" onclick="toggleTheme()" aria-label="Alternar tema">
+        <svg id="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       NAVEGACAO LIMPA (3 ABAS ESSENCIAIS SEM ENCANAMENTO TECNICO)
+       ======================================================================== -->
+  <nav class="nav-bar">
+    <div class="nav-tabs">
+      <button id="tab-today" class="nav-tab active" onclick="switchTab('today')">
+        🎯 O que faço agora?
+      </button>
+      <button id="tab-dump" class="nav-tab" onclick="switchTab('dump')">
+        🧠 Despejo &amp; IA
+        <span id="proposal-count-badge" class="nav-badge" style="display: inline-block;">1</span>
+      </button>
+      <button id="tab-map" class="nav-tab" onclick="switchTab('map')">
+        🌿 Meu Mapa Radial
+      </button>
+    </div>
+  </nav>
+
+  <!-- ========================================================================
+       CONTEUDO PRINCIPAL
+       ======================================================================== -->
+  <main id="app-wrapper" class="app-main">
+
+    <!-- ======================================================================
+         TELA 1: "O QUE FAÇO AGORA?" (TELA INICIAL PADRÃO AO ABRIR)
+         ====================================================================== -->
+    <section id="view-today" class="view-content active">
+
+      <!-- Barra de Crescimento Adulta e Serena (sem culpas ou punições) -->
+      <div class="growth-strip">
+        <div class="growth-info">
+          <div class="growth-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22v-9"/><path d="M9 15c-3 0-5-3-5-7 5 0 8 3 7 7Z"/><path d="M15 13c3 0 5-2 5-6-5 0-8 2-7 6Z"/>
+            </svg>
+          </div>
+          <div class="growth-text">
+            <h4>Estágio: Broto Enraizado</h4>
+            <p>Seu ecossistema está vivo e crescendo no seu ritmo. 6 passos concluídos esta semana.</p>
+          </div>
+        </div>
+        <div class="growth-progress-wrap">
+          <div class="growth-bar">
+            <div id="growth-fill" class="growth-fill"></div>
+          </div>
+          <span class="growth-score">65%</span>
+        </div>
+      </div>
+
+      <!-- Card "Onde Parei" (Retomada Instantânea para combater a perda de memória de trabalho) -->
+      <div class="where-stopped-card">
+        <div class="where-stopped-main">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="m14 10-4 4"/><path d="m10 10 4 4"/>
+          </svg>
+          <div>
+            <div class="where-stopped-label">Onde parei ontem às 18:30</div>
+            <div id="where-stopped-display" class="where-stopped-text">
+              "Parei revisando a proposta comercial do cliente Alpha antes de enviar por WhatsApp."
+            </div>
+          </div>
+        </div>
+        <button class="btn-resume" onclick="resumeWhereStopped()">
+          Continuar daqui ↗
+        </button>
+      </div>
+
+      <!-- Grid Principal: Herói (Próximo Passo) + Mini Radar + Fila de Foco -->
+      <div class="focus-hero-grid">
+        
+        <!-- Cartão Herói: O Único Próximo Passo -->
+        <article class="hero-card">
+          <div class="hero-header">
+            <span class="hero-label-top">Seu Único Próximo Passo</span>
+            <span id="hero-tag" class="hero-badge-tag">💼 Freelance · Cliente Alpha</span>
+          </div>
+
+          <h2 id="hero-title" class="hero-title">Finalizar envio da proposta comercial</h2>
+
+          <!-- Caixa Destaque do Primeiro Passo -->
+          <div class="hero-first-step-box">
+            <div class="first-step-tag">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              PRIMEIRO PASSO IMEDIATO
+            </div>
+            <div id="hero-step" class="hero-first-step-content">
+              Escrever os 3 tópicos do escopo na proposta do freelance.
+            </div>
+          </div>
+
+          <!-- Filtro de Energia contra Cegueira de Tempo (sem virar calendário) -->
+          <div class="energy-filter-group">
+            <div class="energy-label">Fôlego necessário:</div>
+            <div class="energy-buttons">
+              <button class="btn-energy active" onclick="setEnergy(this, '15 min')">⚡ Micro (15 min)</button>
+              <button class="btn-energy" onclick="setEnergy(this, '45 min')">🎯 Foco (45 min)</button>
+              <button class="btn-energy" onclick="setEnergy(this, '90 min')">🌊 Bloco (90 min)</button>
+            </div>
+            <p id="energy-hint" class="energy-note">Passo curto. Dá para fazer antes do próximo café sem fritar o cérebro.</p>
+          </div>
+
+          <!-- Ações Imediatas -->
+          <div class="hero-actions">
+            <button class="btn-primary-action" onclick="completeHeroStep()">
+              ✓ Concluir este passo
+            </button>
+            <button class="btn-unstuck" onclick="toggleUnstuck()">
+              ✨ Travou? Me ajuda
+            </button>
+          </div>
+
+          <!-- Gaveta Destravadora com ChatGPT -->
+          <div id="unstuck-box" class="unstuck-box">
+            <div class="unstuck-header">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+              <span>ChatGPT quebrou isso em 3 micro-passos de 3 minutos:</span>
+            </div>
+            <ul class="micro-steps-list">
+              <li class="micro-step-item">
+                <span>1.</span> Abrir o Google Docs da proposta comercial no navegador
+              </li>
+              <li class="micro-step-item">
+                <span>2.</span> Colar os 3 itens anotados no rascunho de WhatsApp
+              </li>
+              <li class="micro-step-item">
+                <span>3.</span> Exportar em PDF e fechar o documento
+              </li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- Coluna Direita: Radar Espacial + Lista de Foco -->
+        <div class="hero-side-column">
+          
+          <!-- Mini Radar do Mapa (Âncora de Orientação) -->
+          <div class="radar-card">
+            <div class="radar-title">
+              <span>Orientação Espacial</span>
+              <button style="font-size: 12px; color: var(--color-sage);" onclick="switchTab('map')">Ver completo ↗</button>
+            </div>
+            <div class="radar-subtitle">Onde essa tarefa mora no seu negócio</div>
+            <div class="radar-svg-container" onclick="switchTab('map')" title="Clique para abrir o mapa radial">
+              <svg viewBox="0 0 200 120" style="width: 100%; height: 100%;">
+                <!-- Círculo Central -->
+                <circle cx="100" cy="60" r="18" fill="var(--color-sage-bg)" stroke="var(--color-sage)" stroke-width="1.5"/>
+                <circle cx="100" cy="60" r="5" fill="var(--color-sage)"/>
+                
+                <!-- Órbitas -->
+                <circle cx="100" cy="60" r="42" fill="none" stroke="var(--border-subtle)" stroke-dasharray="3 3"/>
+                
+                <!-- Ramo 1: Freelance (onde você está) -->
+                <line x1="100" y1="60" x2="55" y2="45" stroke="var(--color-freelance)" stroke-width="2"/>
+                <circle cx="55" cy="45" r="14" fill="var(--color-freelance-bg)" stroke="var(--color-freelance)" stroke-width="2"/>
+                <!-- Pulso onde você está -->
+                <circle cx="55" cy="45" r="18" fill="none" stroke="var(--color-freelance)" stroke-width="1.5" opacity="0.6">
+                  <animate attributeName="r" values="14;22;14" dur="2s" repeatCount="indefinite"/>
+                  <animate attributeName="opacity" values="0.8;0;0.8" dur="2s" repeatCount="indefinite"/>
+                </circle>
+
+                <!-- Ramo 2: Curso -->
+                <line x1="100" y1="60" x2="145" y2="42" stroke="var(--border-strong)" stroke-width="1.2"/>
+                <circle cx="145" cy="42" r="10" fill="var(--color-curso-bg)" stroke="var(--color-curso)" stroke-width="1.5"/>
+
+                <!-- Ramo 3: SaaS -->
+                <line x1="100" y1="60" x2="100" y2="98" stroke="var(--border-strong)" stroke-width="1.2"/>
+                <circle cx="100" cy="98" r="10" fill="var(--color-saas-bg)" stroke="var(--color-saas)" stroke-width="1.5"/>
+              </svg>
+              <div class="radar-hint">Você está em: Freelance · Propostas</div>
+            </div>
+          </div>
+
+          <!-- Foco Ativo (Até 3 itens) -->
+          <div class="focus-queue-card">
+            <div class="queue-header">
+              <span class="queue-title">Seu Foco (3 notas ativas)</span>
+              <select class="queue-limit-select" onchange="alert('Limite de foco ajustado para ' + this.value + ' notas.')">
+                <option value="1">1 nota</option>
+                <option value="3" selected>3 notas</option>
+                <option value="5">5 notas</option>
+              </select>
+            </div>
+            
+            <div class="queue-list">
+              <div class="queue-item current" onclick="selectQueueItem(0)">
+                <div class="queue-item-meta">
+                  <span class="queue-tag freelance">💼 Freelance</span>
+                  <span style="font-size: 11px; font-weight: 700; color: var(--color-sage);">EM ANDAMENTO</span>
+                </div>
+                <div class="queue-item-title">Proposta comercial cliente Alpha</div>
+                <div class="queue-item-step">1º passo: Escrever os 3 tópicos do escopo.</div>
+              </div>
+
+              <div class="queue-item" onclick="selectQueueItem(1)">
+                <div class="queue-item-meta">
+                  <span class="queue-tag curso">🎓 Curso</span>
+                  <span style="font-size: 11px; color: var(--text-soft);">A seguir</span>
+                </div>
+                <div class="queue-item-title">Gravar módulo 1 de Figma</div>
+                <div class="queue-item-step">1º passo: Abrir OBS e gravar 10 min de introdução.</div>
+              </div>
+
+              <div class="queue-item" onclick="selectQueueItem(2)">
+                <div class="queue-item-meta">
+                  <span class="queue-tag saas">🚀 Micro-SaaS</span>
+                  <span style="font-size: 11px; color: var(--text-soft);">A seguir</span>
+                </div>
+                <div class="queue-item-title">Validar precificação do plano Pro</div>
+                <div class="queue-item-step">1º passo: Mandar mensagem para 2 testadores beta.</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         TELA 2: FLUXO DESPEJO MENTAL -> PROPOSTA IA -> ACEITAR
+         ====================================================================== -->
+    <section id="view-dump" class="view-content">
+      <div class="dump-flow-container">
+        
+        <!-- Indicador de Passos -->
+        <div class="dump-steps-nav">
+          <div id="step-ind-1" class="dump-step-indicator active">
+            <span class="step-circle">1</span>
+            <span>Despejo Livre</span>
+          </div>
+          <span class="step-divider"></span>
+          <div id="step-ind-2" class="dump-step-indicator">
+            <span class="step-circle">2</span>
+            <span>Estruturação IA</span>
+          </div>
+          <span class="step-divider"></span>
+          <div id="step-ind-3" class="dump-step-indicator">
+            <span class="step-circle">3</span>
+            <span>Aprovar no Mapa</span>
+          </div>
+        </div>
+
+        <!-- Etapa 1: Campo de Despejo Livre -->
+        <div id="dump-stage-1" class="dump-input-stage">
+          <h2 class="dump-title">Despeje tudo o que está na sua cabeça</h2>
+          <p class="dump-desc">Não se preocupe com formato, pastas ou prazos. Apenas fale ou escreva tudo o que precisa ser feito.</p>
+
+          <div class="dump-textarea-wrap">
+            <textarea id="dump-text" class="dump-textarea" placeholder="Ex: Preciso entregar a proposta daquele cliente de UI, também tenho que gravar o curso de Figma e decidir se uso Postgres ou SQLite no meu projeto de notas..."></textarea>
+          </div>
+
+          <div class="dump-helpers">
+            <button class="btn-sample-fill" onclick="fillRealisticSample()">
+              💡 Preencher exemplo realista de cabeça cheia
+            </button>
+            <button class="btn-voice-input" onclick="alert('Simulação: gravação de áudio ativada. Pode ditar!')">
+              🎙️ Gravar por voz
+            </button>
+          </div>
+
+          <button class="btn-transform" onclick="startTransform()">
+            ✨ Transformar em Mapa Estruturado em 1 minuto
+          </button>
+        </div>
+
+        <!-- Etapa 2: Processando com o ChatGPT -->
+        <div id="dump-stage-2" class="dump-processing-stage">
+          <svg class="pulse-sprout" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 26V13"/>
+            <path d="M14 17C6 17 4 10 5 4c7 0 11 4 9 13Z"/>
+            <path d="M14 13C14 6 19 2 25 2c1 7-3 12-11 11Z"/>
+          </svg>
+          <h3 class="processing-title">O ChatGPT está organizando suas ideias...</h3>
+          <p class="processing-sub">Identificando 3 macro-áreas, agrupando notas e extraindo o primeiro passo imediato de cada uma sem você precisar pensar.</p>
+        </div>
+
+        <!-- Etapa 3: Antes vs Depois & Aprovação em 1 Toque -->
+        <div id="dump-stage-3" class="dump-review-stage">
+          
+          <div class="comparison-grid">
+            <!-- Coluna ANTES -->
+            <div class="comp-col">
+              <div class="comp-col-header">
+                <span>ANTES (Seu Despejo Bruto)</span>
+                <span>Texto Livre</span>
+              </div>
+              <div id="comp-before-content" class="comp-before-text">
+                "Tô com a cabeça a mil com três frentes: no freelance da Alpha preciso fechar o escopo da proposta comercial e mandar até amanhã, e também cobrar a entrada do projeto. No curso de Design pra Devs preciso gravar a aula 1 de Figma e montar o formulário da lista de espera pra testar interesse. E no meu projeto paralelo do app de notas ainda tenho que decidir o banco de dados e escolher o preço do plano pro sem complicar..."
+              </div>
+            </div>
+
+            <!-- Coluna DEPOIS (Organizado em Áreas) -->
+            <div class="comp-col">
+              <div class="comp-col-header">
+                <span>DEPOIS (Proposta Estruturada da IA)</span>
+                <span>3 Áreas · 6 Notas</span>
+              </div>
+              
+              <div class="proposed-branches">
+                <!-- Área 1 -->
+                <div class="proposed-branch-card freelance">
+                  <div class="branch-card-header">
+                    <span class="branch-title" style="color: var(--color-freelance);">💼 Freelance Design</span>
+                    <span style="font-size: 11px; font-weight: 700; color: var(--color-freelance);">2 NOTAS</span>
+                  </div>
+                  <div class="branch-first-step">
+                    <strong>Nota 1:</strong> Proposta Alpha (1º passo: Escrever escopo)<br>
+                    <strong>Nota 2:</strong> Cobrança de entrada
+                  </div>
+                </div>
+
+                <!-- Área 2 -->
+                <div class="proposed-branch-card curso">
+                  <div class="branch-card-header">
+                    <span class="branch-title" style="color: var(--color-curso);">🎓 Curso Design p/ Devs</span>
+                    <span style="font-size: 11px; font-weight: 700; color: var(--color-curso);">2 NOTAS</span>
+                  </div>
+                  <div class="branch-first-step">
+                    <strong>Nota 1:</strong> Módulo 1 Figma (1º passo: Gravar 10 min)<br>
+                    <strong>Nota 2:</strong> Formulário de interesse
+                  </div>
+                </div>
+
+                <!-- Área 3 -->
+                <div class="proposed-branch-card saas">
+                  <div class="branch-card-header">
+                    <span class="branch-title" style="color: var(--color-saas);">🚀 Micro-SaaS de Notas</span>
+                    <span style="font-size: 11px; font-weight: 700; color: var(--color-saas);">2 NOTAS</span>
+                  </div>
+                  <div class="branch-first-step">
+                    <strong>Nota 1:</strong> Definir Precificação Pro (1º passo: Validar com 2 usuários)<br>
+                    <strong>Nota 2:</strong> Escolha de Banco de Dados
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Barra de Ação de Aprovação sem Fadiga -->
+          <div class="review-action-bar">
+            <div class="review-info">
+              <h4>Pronto para aprovar e ver no mapa?</h4>
+              <p>Os nós entrarão no seu mapa radial imediatamente. Você pode desfazer a qualquer momento.</p>
+            </div>
+            <div class="review-buttons">
+              <button class="btn-discard-all" onclick="discardProposal()">
+                Descartar
+              </button>
+              <button class="btn-accept-all" onclick="acceptProposal()">
+                ✓ Aceitar proposta e integrar ao mapa
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         TELA 3: MAPA RADIAL HIERÁRQUICO (VISÃO ESPACIAL COM CORES & 5 NÍVEIS)
+         ====================================================================== -->
+    <section id="view-map" class="view-content">
+      <div class="map-screen-container">
+        
+        <!-- Toolbar do Mapa -->
+        <div class="map-toolbar">
+          <div class="map-breadcrumbs">
+            <span class="breadcrumb-item" onclick="drillUpToRoot()">🌱 Negócio</span>
+            <span id="breadcrumb-sep" style="display: none;">›</span>
+            <span id="breadcrumb-sub" class="breadcrumb-item current" style="display: none;"></span>
+            <span id="depth-indicator" class="depth-badge">NÍVEL 1 / 5</span>
+          </div>
+
+          <div class="map-filters">
+            <span style="font-size: 12px; color: var(--text-muted); margin-right: 4px;">Filtro rápido:</span>
+            <button class="map-filter-btn active" onclick="setMapFilter(this, 'all')">Todos</button>
+            <button class="map-filter-btn" onclick="setMapFilter(this, 'now')">Somente "Agora"</button>
+            <button class="map-filter-btn" onclick="setMapFilter(this, 'focus')">Foco do Dia</button>
+          </div>
+        </div>
+
+        <!-- Layout do Mapa: Lateral "De onde você veio" + Canvas SVG + Detalhes -->
+        <div class="map-canvas-layout">
+          
+          <!-- Lateral Esquerda: "De onde você veio" -->
+          <aside class="parent-context-panel">
+            <div class="parent-context-title">DE ONDE VOCÊ VEIO</div>
+            
+            <button id="btn-parent-nav" class="parent-nav-btn" onclick="drillUpToRoot()">
+              <div class="parent-label">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                <span>Nível anterior</span>
+              </div>
+              <div id="parent-name-text" class="parent-name">Raiz do Negócio</div>
+            </button>
+
+            <div style="font-size: 13px; color: var(--text-muted); line-height: 1.4; margin-bottom: 12px;">
+              Você está explorando um nível por vez. O mapa nunca sobrecarrega sua visão.
+            </div>
+
+            <!-- Mini Diagrama Orbital -->
+            <div class="parent-mini-diagram">
+              <svg viewBox="0 0 100 80" style="width: 80px; height: 60px;">
+                <circle cx="50" cy="40" r="12" fill="var(--color-sage-bg)" stroke="var(--color-sage)" stroke-width="1.2"/>
+                <circle cx="28" cy="25" r="6" fill="var(--color-freelance-bg)" stroke="var(--color-freelance)" stroke-width="1"/>
+                <circle cx="72" cy="25" r="6" fill="var(--color-curso-bg)" stroke="var(--color-curso)" stroke-width="1"/>
+                <circle cx="50" cy="62" r="6" fill="var(--color-saas-bg)" stroke="var(--color-saas)" stroke-width="1"/>
+              </svg>
+            </div>
+          </aside>
+
+          <!-- Centro: Viewport do Mapa Radial SVG Interativo -->
+          <div class="radial-viewport">
+            <svg id="radial-svg" class="radial-svg" viewBox="-240 -200 480 400">
+              
+              <!-- Órbitas Concéntricas Sutis -->
+              <circle cx="0" cy="0" r="145" fill="none" stroke="var(--border-subtle)" stroke-width="1" stroke-dasharray="4 4"/>
+              
+              <!-- Linhas de Ligação Radial -->
+              <!-- Linha 1: Freelance -->
+              <line id="edge-freelance" x1="0" y1="0" x2="-125" y2="-75" stroke="var(--color-freelance-border)" stroke-width="2"/>
+              <!-- Linha 2: Curso -->
+              <line id="edge-curso" x1="0" y1="0" x2="125" y2="-75" stroke="var(--color-curso-border)" stroke-width="2"/>
+              <!-- Linha 3: SaaS -->
+              <line id="edge-saas" x1="0" y1="0" x2="0" y2="135" stroke="var(--color-saas-border)" stroke-width="2"/>
+
+              <!-- NÓ CENTRAL (HUB ATIVO) -->
+              <g class="node-hub" onclick="selectNode('hub')">
+                <circle cx="0" cy="0" r="46" fill="var(--bg-surface)" stroke="var(--color-sage)" stroke-width="3"/>
+                <circle cx="0" cy="0" r="38" fill="var(--color-sage-bg)"/>
+                <!-- Ícone do broto no centro -->
+                <g transform="translate(-12, -16) scale(0.85)">
+                  <path d="M14 26V13" stroke="var(--color-sage)" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M14 17C6 17 4 10 5 4c7 0 11 4 9 13Z" stroke="var(--color-sage)" stroke-width="2" fill="none"/>
+                  <path d="M14 13C14 6 19 2 25 2c1 7-3 12-11 11Z" stroke="var(--color-sage)" stroke-width="2" fill="none"/>
+                </g>
+                <text x="0" y="24" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-main)">Negócio</text>
+              </g>
+
+              <!-- NÓ 1: Freelance Design (Terracota) -->
+              <g id="node-freelance" class="node-orbit" transform="translate(-125, -75)" onclick="selectNode('freelance')">
+                <rect x="-65" y="-38" width="130" height="76" rx="10" fill="var(--bg-surface)" stroke="var(--color-freelance)" stroke-width="2"/>
+                <rect x="-65" y="-38" width="130" height="22" rx="10" fill="var(--color-freelance-bg)"/>
+                <text x="-54" y="-23" font-size="10" font-weight="700" fill="var(--color-freelance)">💼 FREELANCE</text>
+                <text x="-54" y="2" font-size="13" font-weight="700" fill="var(--text-main)">Cliente Alpha</text>
+                <text x="-54" y="22" font-size="11" fill="var(--text-muted)">1º passo: Escopo</text>
+              </g>
+
+              <!-- NÓ 2: Curso Design p/ Devs (Azul) -->
+              <g id="node-curso" class="node-orbit" transform="translate(125, -75)" onclick="selectNode('curso')">
+                <rect x="-65" y="-38" width="130" height="76" rx="10" fill="var(--bg-surface)" stroke="var(--color-curso)" stroke-width="2"/>
+                <rect x="-65" y="-38" width="130" height="22" rx="10" fill="var(--color-curso-bg)"/>
+                <text x="-54" y="-23" font-size="10" font-weight="700" fill="var(--color-curso)">🎓 CURSO DEVS</text>
+                <text x="-54" y="2" font-size="13" font-weight="700" fill="var(--text-main)">Módulo 1 Figma</text>
+                <text x="-54" y="22" font-size="11" fill="var(--text-muted)">1º passo: Gravar 10m</text>
+              </g>
+
+              <!-- NÓ 3: Micro-SaaS (Verde Sálvia) -->
+              <g id="node-saas" class="node-orbit" transform="translate(0, 135)" onclick="selectNode('saas')">
+                <rect x="-65" y="-38" width="130" height="76" rx="10" fill="var(--bg-surface)" stroke="var(--color-saas)" stroke-width="2"/>
+                <rect x="-65" y="-38" width="130" height="22" rx="10" fill="var(--color-saas-bg)"/>
+                <text x="-54" y="-23" font-size="10" font-weight="700" fill="var(--color-saas)">🚀 MICRO-SAAS</text>
+                <text x="-54" y="2" font-size="13" font-weight="700" fill="var(--text-main)">Precificação Pro</text>
+                <text x="-54" y="22" font-size="11" fill="var(--text-muted)">1º passo: 2 usuários</text>
+              </g>
+
+            </svg>
+          </div>
+
+          <!-- Painel Direito: Inspetor de Detalhes -->
+          <aside class="inspector-panel">
+            <div class="inspector-header">
+              <div id="insp-kind" class="inspector-kind-badge">Área do Negócio</div>
+              <h3 id="insp-title" class="inspector-title">💼 Freelance Design</h3>
+            </div>
+
+            <div class="inspector-body">
+              <div class="inspector-field">
+                <div class="inspector-field-label">Primeiro Passo Imediato</div>
+                <div id="insp-step" class="inspector-field-value">Escrever os 3 tópicos do escopo na proposta do freelance.</div>
+              </div>
+
+              <div class="inspector-field">
+                <div class="inspector-field-label">Momento (Lane)</div>
+                <div id="insp-lane" class="inspector-field-value">Agora (Now)</div>
+              </div>
+
+              <div class="inspector-field">
+                <div class="inspector-field-label">Nível de Fôlego / Energia</div>
+                <div id="insp-energy" class="inspector-field-value">⚡ Micro (15 min)</div>
+              </div>
+
+              <div class="inspector-field">
+                <div class="inspector-field-label">Subitens &amp; Notas</div>
+                <div id="insp-notes-count" class="inspector-field-value">2 notas vinculadas</div>
+              </div>
+            </div>
+
+            <div class="inspector-actions">
+              <button id="btn-drill" class="btn-drilldown" onclick="drillDownSelected()">
+                Aprofundar neste nível ↗
+              </button>
+            </div>
+          </aside>
+
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================================
+       MODAL: FECHAR O DIA EM 5 SEGUNDOS (DESCOMPRESSÃO COGNITIVA)
+       ======================================================================== -->
+  <div id="modal-close-day" class="modal-backdrop">
+    <div class="modal-window">
+      <button class="modal-close-btn" onclick="closeCloseDayModal()">✕</button>
+      
+      <div class="modal-icon-header">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+        </svg>
+      </div>
+
+      <h3 class="modal-title">Encerrar o dia com a mente em paz</h3>
+      <p class="modal-desc">Onde você parou hoje? Deixe uma frase para o seu eu de amanhã retomar sem gastar energia.</p>
+
+      <input id="input-close-day" class="modal-input" type="text" value="Parei com a proposta escrita; amanhã só preciso revisar o PDF e mandar no WhatsApp.">
+
+      <div class="modal-btn-row">
+        <button class="btn-undo" onclick="closeCloseDayModal()">Cancelar</button>
+        <button class="btn-primary-action" onclick="saveCloseDay()">Guardar e descansar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notificação Toast com Desfazer Instantâneo -->
+  <div id="toast-notice" class="toast-notice">
+    <span id="toast-msg">Alteração realizada.</span>
+    <button class="btn-toast-undo" onclick="triggerUndo()">Desfazer</button>
+  </div>
+
+  <!-- ========================================================================
+       LOGICA JS INLINE (100% AUTOSSUFICIENTE, SEM DEPENDENCIAS)
+       ======================================================================== -->
+  <script>
+    // Estado da Aplicação em Memória
+    const state = {
+      theme: 'light',
+      activeTab: 'today',
+      widgetMode: false,
+      history: [],
+      growthPercent: 65,
+      selectedNodeId: 'freelance',
+      currentDepth: 1,
+      whereStopped: "Parei revisando a proposta comercial do cliente Alpha antes de enviar por WhatsApp.",
+      hero: {
+        tag: "💼 Freelance · Cliente Alpha",
+        title: "Finalizar envio da proposta comercial",
+        step: "Escrever os 3 tópicos do escopo na proposta do freelance.",
+        energy: "⚡ Micro (15 min)"
+      },
+      queue: [
+        {
+          tag: "💼 Freelance",
+          tagClass: "freelance",
+          title: "Proposta comercial cliente Alpha",
+          step: "Escrever os 3 tópicos do escopo na proposta.",
+          energy: "⚡ Micro (15 min)"
+        },
+        {
+          tag: "🎓 Curso",
+          tagClass: "curso",
+          title: "Gravar módulo 1 de Figma",
+          step: "Abrir OBS e gravar 10 min de introdução.",
+          energy: "🎯 Foco (45 min)"
+        },
+        {
+          tag: "🚀 Micro-SaaS",
+          tagClass: "saas",
+          title: "Validar precificação do plano Pro",
+          step: "Mandar mensagem para 2 testadores beta.",
+          energy: "⚡ Micro (15 min)"
+        }
+      ]
+    };
+
+    // Alternar Tema (Claro / Escuro)
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'light';
+      const next = current === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      state.theme = next;
+      try { localStorage.setItem('gyp-theme', next); } catch(e) {}
+    }
+
+    // Inicializar Tema Salvo
+    (function initTheme() {
+      try {
+        const saved = localStorage.getItem('gyp-theme');
+        if (saved) {
+          document.documentElement.setAttribute('data-theme', saved);
+          state.theme = saved;
+        }
+      } catch(e) {}
+    })();
+
+    // Alternar Abas Principais
+    function switchTab(tabId) {
+      state.activeTab = tabId;
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
+
+      const tabBtn = document.getElementById('tab-' + tabId);
+      const viewEl = document.getElementById('view-' + tabId);
+      if (tabBtn) tabBtn.classList.add('active');
+      if (viewEl) viewEl.classList.add('active');
+    }
+
+    // Simulação do Widget MCP de 600px do ChatGPT
+    function toggleWidgetMode() {
+      state.widgetMode = !state.widgetMode;
+      const app = document.getElementById('app-wrapper');
+      const btn = document.getElementById('btn-toggle-widget');
+      if (state.widgetMode) {
+        app.classList.add('mcp-container-simulation');
+        btn.classList.add('active');
+        btn.innerText = '✕ Sair do Widget 600px';
+        showToast('Modo Widget inline de 600px do ChatGPT ativado.');
+      } else {
+        app.classList.remove('mcp-container-simulation');
+        btn.classList.remove('active');
+        btn.innerText = '📱 Widget 600px';
+      }
+    }
+
+    // Registrar Ação no Histórico de Desfazer
+    function pushHistory(actionName, undoFn) {
+      state.history.push({ name: actionName, undo: undoFn });
+      updateUndoButton();
+    }
+
+    function updateUndoButton() {
+      const btn = document.getElementById('btn-undo');
+      const text = document.getElementById('undo-text');
+      if (state.history.length > 0) {
+        btn.disabled = false;
+        text.innerText = `Desfazer (${state.history.length})`;
+      } else {
+        btn.disabled = true;
+        text.innerText = 'Desfazer';
+      }
+    }
+
+    function triggerUndo() {
+      if (state.history.length === 0) return;
+      const lastAction = state.history.pop();
+      if (lastAction && typeof lastAction.undo === 'function') {
+        lastAction.undo();
+        showToast(`Desfeito: ${lastAction.name}`);
+      }
+      updateUndoButton();
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast-notice');
+      const toastMsg = document.getElementById('toast-msg');
+      toastMsg.innerText = msg;
+      toast.classList.add('active');
+      setTimeout(() => {
+        toast.classList.remove('active');
+      }, 4000);
+    }
+
+    // Ações da Tela "O que faço agora?"
+    function setEnergy(btn, duration) {
+      document.querySelectorAll('.btn-energy').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const hint = document.getElementById('energy-hint');
+      if (duration === '15 min') {
+        hint.innerText = 'Passo curto. Dá para fazer antes do próximo café sem cansar o cérebro.';
+      } else if (duration === '45 min') {
+        hint.innerText = 'Bloco de foco moderado. Bom para avançar com tranquilidade.';
+      } else {
+        hint.innerText = 'Mergulho profundo. Reserve um momento sem notificações para fluir.';
+      }
+    }
+
+    function toggleUnstuck() {
+      const box = document.getElementById('unstuck-box');
+      box.classList.toggle('active');
+    }
+
+    function completeHeroStep() {
+      const prevStep = state.hero.step;
+      const prevGrowth = state.growthPercent;
+
+      // Animação de conclusão
+      state.growthPercent = Math.min(100, state.growthPercent + 10);
+      document.getElementById('growth-fill').style.width = state.growthPercent + '%';
+
+      // Avança para o próximo da fila
+      if (state.queue.length > 1) {
+        const completed = state.queue.shift();
+        const next = state.queue[0];
+        state.hero.tag = next.tag;
+        state.hero.title = next.title;
+        state.hero.step = next.step;
+
+        document.getElementById('hero-tag').innerText = next.tag;
+        document.getElementById('hero-title').innerText = next.title;
+        document.getElementById('hero-step').innerText = next.step;
+
+        pushHistory('Concluir passo', () => {
+          state.queue.unshift(completed);
+          state.hero.step = prevStep;
+          state.growthPercent = prevGrowth;
+          document.getElementById('growth-fill').style.width = prevGrowth + '%';
+          document.getElementById('hero-step').innerText = prevStep;
+        });
+
+        showToast('✓ Passo concluído! Próximo passo ativado.');
+      } else {
+        showToast('Parabéns! Todos os passos do seu foco foram concluídos.');
+      }
+    }
+
+    function selectQueueItem(index) {
+      const item = state.queue[index];
+      if (!item) return;
+
+      document.querySelectorAll('.queue-item').forEach((el, i) => {
+        el.classList.toggle('current', i === index);
+      });
+
+      state.hero.tag = item.tag;
+      state.hero.title = item.title;
+      state.hero.step = item.step;
+
+      document.getElementById('hero-tag').innerText = item.tag;
+      document.getElementById('hero-title').innerText = item.title;
+      document.getElementById('hero-step').innerText = item.step;
+    }
+
+    function resumeWhereStopped() {
+      switchTab('map');
+      selectNode('freelance');
+      showToast('Retomando no mapa: Freelance · Proposta Alpha');
+    }
+
+    // Fluxo Despejo Mental -> Proposta IA -> Aceitar
+    function fillRealisticSample() {
+      const sample = "Tô com a cabeça a mil com três frentes: no freelance da Alpha preciso fechar o escopo da proposta comercial e mandar até amanhã, e também cobrar a entrada do projeto. No curso de Design pra Devs preciso gravar a aula 1 de Figma e montar o formulário da lista de espera pra testar interesse. E no meu projeto paralelo do app de notas ainda tenho que decidir o banco de dados e escolher o preço do plano pro sem complicar...";
+      document.getElementById('dump-text').value = sample;
+    }
+
+    function startTransform() {
+      const text = document.getElementById('dump-text').value.trim();
+      if (!text) {
+        alert('Por favor, escreva algo ou clique em "Preencher exemplo realista".');
+        return;
+      }
+
+      // Transiciona para etapa 2
+      document.getElementById('dump-stage-1').style.display = 'none';
+      document.getElementById('dump-stage-2').classList.add('active');
+      document.getElementById('step-ind-1').classList.remove('active');
+      document.getElementById('step-ind-2').classList.add('active');
+
+      // Simula 1 segundo de processamento sereno
+      setTimeout(() => {
+        document.getElementById('dump-stage-2').classList.remove('active');
+        document.getElementById('dump-stage-3').classList.add('active');
+        document.getElementById('step-ind-2').classList.remove('active');
+        document.getElementById('step-ind-3').classList.add('active');
+        document.getElementById('comp-before-content').innerText = text;
+      }, 1000);
+    }
+
+    function acceptProposal() {
+      // Cria estado para desfazer
+      pushHistory('Aceitar proposta da IA', () => {
+        document.getElementById('dump-stage-3').classList.remove('active');
+        document.getElementById('dump-stage-1').style.display = 'block';
+        document.getElementById('step-ind-3').classList.remove('active');
+        document.getElementById('step-ind-1').classList.add('active');
+        document.getElementById('proposal-count-badge').style.display = 'inline-block';
+      });
+
+      document.getElementById('proposal-count-badge').style.display = 'none';
+      showToast('✓ Proposta aceita! 3 áreas integradas ao mapa.');
+      switchTab('map');
+    }
+
+    function discardProposal() {
+      document.getElementById('dump-stage-3').classList.remove('active');
+      document.getElementById('dump-stage-1').style.display = 'block';
+      document.getElementById('step-ind-3').classList.remove('active');
+      document.getElementById('step-ind-1').classList.add('active');
+      showToast('Proposta descartada.');
+    }
+
+    // Mapa Radial & Inspeção de Nós
+    const nodesData = {
+      hub: {
+        kind: "Raiz do Negócio",
+        title: "Studio & Negócios",
+        step: "3 áreas em crescimento.",
+        lane: "Visão Geral",
+        energy: "Macro",
+        notesCount: "6 notas no total"
+      },
+      freelance: {
+        kind: "Área: Freelance UI/UX",
+        title: "💼 Cliente Alpha",
+        step: "Escrever os 3 tópicos do escopo na proposta do freelance.",
+        lane: "Agora (Now)",
+        energy: "⚡ Micro (15 min)",
+        notesCount: "2 notas vinculadas"
+      },
+      curso: {
+        kind: "Área: Educação",
+        title: "🎓 Curso Design p/ Devs",
+        step: "Abrir o OBS e gravar os primeiros 10 minutos de introdução.",
+        lane: "Agora (Now)",
+        energy: "🎯 Foco (45 min)",
+        notesCount: "2 notas vinculadas"
+      },
+      saas: {
+        kind: "Área: Produto Próprio",
+        title: "🚀 Micro-SaaS de Notas",
+        step: "Mandar mensagem para 2 usuários que testaram a versão alfa.",
+        lane: "Depois (Later)",
+        energy: "⚡ Micro (15 min)",
+        notesCount: "2 notas vinculadas"
+      }
+    };
+
+    function selectNode(nodeId) {
+      state.selectedNodeId = nodeId;
+      const data = nodesData[nodeId];
+      if (!data) return;
+
+      document.getElementById('insp-kind').innerText = data.kind;
+      document.getElementById('insp-title').innerText = data.title;
+      document.getElementById('insp-step').innerText = data.step;
+      document.getElementById('insp-lane').innerText = data.lane;
+      document.getElementById('insp-energy').innerText = data.energy;
+      document.getElementById('insp-notes-count').innerText = data.notesCount;
+
+      const drillBtn = document.getElementById('btn-drill');
+      if (nodeId === 'hub') {
+        drillBtn.innerText = 'Você está na raiz';
+        drillBtn.disabled = true;
+      } else {
+        drillBtn.innerText = `Aprofundar em ${data.title} ↗`;
+        drillBtn.disabled = false;
+      }
+    }
+
+    function drillDownSelected() {
+      const data = nodesData[state.selectedNodeId];
+      if (!data || state.selectedNodeId === 'hub') return;
+
+      state.currentDepth = 2;
+      document.getElementById('depth-indicator').innerText = 'NÍVEL 2 / 5';
+      document.getElementById('breadcrumb-sep').style.display = 'inline';
+      const sub = document.getElementById('breadcrumb-sub');
+      sub.style.display = 'inline';
+      sub.innerText = data.title;
+
+      document.getElementById('parent-name-text').innerText = 'Studio & Negócios';
+
+      showToast(`Aprofundou no nível 2: ${data.title}`);
+    }
+
+    function drillUpToRoot() {
+      state.currentDepth = 1;
+      state.selectedNodeId = 'hub';
+      document.getElementById('depth-indicator').innerText = 'NÍVEL 1 / 5';
+      document.getElementById('breadcrumb-sep').style.display = 'none';
+      document.getElementById('breadcrumb-sub').style.display = 'none';
+      document.getElementById('parent-name-text').innerText = 'Raiz do Negócio';
+      selectNode('hub');
+      showToast('Voltou para a raiz do negócio (Nível 1).');
+    }
+
+    function setMapFilter(btn, filterType) {
+      document.querySelectorAll('.map-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const freelanceNode = document.getElementById('node-freelance');
+      const cursoNode = document.getElementById('node-curso');
+      const saasNode = document.getElementById('node-saas');
+
+      if (filterType === 'all') {
+        freelanceNode.style.opacity = '1';
+        cursoNode.style.opacity = '1';
+        saasNode.style.opacity = '1';
+      } else if (filterType === 'now') {
+        freelanceNode.style.opacity = '1';
+        cursoNode.style.opacity = '1';
+        saasNode.style.opacity = '0.25'; // SaaS está em "later"
+      } else if (filterType === 'focus') {
+        freelanceNode.style.opacity = '1';
+        cursoNode.style.opacity = '0.3';
+        saasNode.style.opacity = '0.3';
+      }
+    }
+
+    // Modal Fechar o Dia em 5 Segundos
+    function openCloseDayModal() {
+      document.getElementById('modal-close-day').classList.add('active');
+    }
+
+    function closeCloseDayModal() {
+      document.getElementById('modal-close-day').classList.remove('active');
+    }
+
+    function saveCloseDay() {
+      const text = document.getElementById('input-close-day').value.trim();
+      if (text) {
+        const prev = state.whereStopped;
+        state.whereStopped = text;
+        document.getElementById('where-stopped-display').innerText = `"${text}"`;
+        pushHistory('Atualizar onde parei', () => {
+          state.whereStopped = prev;
+          document.getElementById('where-stopped-display').innerText = `"${prev}"`;
+        });
+      }
+      closeCloseDayModal();
+      showToast('🌙 Dia encerrado com calma. Seu contexto está seguro para amanhã.');
+    }
+
+    // Inicialização
+    selectNode('freelance');
+  </script>
+</body>
+</html>

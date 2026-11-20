@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GrowYourPlan · laboratório: o chat e o momento de pagar</title>
+<style>
+:root{
+  --font: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --bg:#F7F5F0; --paper:#FFFFFF; --sunk:#EFECE5; --ink:#1D2023; --muted:#575D64; --line:#DEDAD1; --line-strong:#C3BEB3;
+  --brand:#1E4E8C; --brand-ink:#FFFFFF; --brand-soft:#E3ECF8; --ok:#1F6B3A; --ok-bg:#E2F2E6; --warn:#8A4B00; --warn-bg:#FBEBD3;
+  --coral:#AE3A2C; --coral-bg:#FBE8E3; --amber:#855400; --amber-bg:#FAEED2; --leaf:#2D6A2D; --leaf-bg:#E3F1DE;
+  --teal:#0F6169; --teal-bg:#DAF0F0; --iris:#4842B0; --iris-bg:#E8E7FA; --plum:#86306F; --plum-bg:#F6E4F0;
+  --chat-user:#E9E6DF; --shadow:0 1px 2px rgba(20,24,28,.06),0 8px 28px rgba(20,24,28,.07);
+  color-scheme:light;
+}
+html[data-theme=dark]{
+  --bg:#131518; --paper:#1C1F23; --sunk:#25292E; --ink:#ECEDEE; --muted:#A9AFB6; --line:#32373D; --line-strong:#4A5058;
+  --brand:#8DB6F0; --brand-ink:#0E1A2B; --brand-soft:#1E2B3E; --ok:#8FD3A2; --ok-bg:#1B2F22; --warn:#F0BE7A; --warn-bg:#352816;
+  --coral:#F39C8D; --coral-bg:#3A231F; --amber:#E9C066; --amber-bg:#352C16; --leaf:#98D08B; --leaf-bg:#1E2F1D;
+  --teal:#7FD1D5; --teal-bg:#16302F; --iris:#ADA9F6; --iris-bg:#25243F; --plum:#E79DD0; --plum-bg:#35202E;
+  --chat-user:#2A2E34; --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.28);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+h1,h2,h3,p{margin:0}
+.c-iris{--a:var(--iris);--ab:var(--iris-bg)} .c-coral{--a:var(--coral);--ab:var(--coral-bg)} .c-leaf{--a:var(--leaf);--ab:var(--leaf-bg)}
+.c-amber{--a:var(--amber);--ab:var(--amber-bg)} .c-teal{--a:var(--teal);--ab:var(--teal-bg)} .c-plum{--a:var(--plum);--ab:var(--plum-bg)}
+.c-root{--a:var(--ink);--ab:var(--sunk)}
+
+/* Lab chrome */
+.lab-bar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:16px;padding:10px 20px;background:var(--paper);border-bottom:1px solid var(--line)}
+.lab-bar .tag{font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px}
+.lab-tabs{display:flex;gap:4px;background:var(--sunk);padding:4px;border-radius:10px;margin-left:auto}
+.lab-tabs button{border:0;background:transparent;padding:8px 14px;border-radius:7px;font-size:14px;font-weight:600;color:var(--muted);min-height:40px}
+.lab-tabs button[aria-selected=true]{background:var(--paper);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 12px;border:1px solid var(--line);background:var(--paper);border-radius:9px;font-size:14px}
+.icon-btn:hover{border-color:var(--line-strong)}
+.brand{display:flex;align-items:center;gap:9px;font-weight:750;letter-spacing:-.3px;font-size:17px;color:var(--ink);text-decoration:none}
+.view{display:none}.view.on{display:block}
+
+/* ============ CHAT VIEW ============ */
+.chat-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:28px;max-width:1180px;margin:0 auto;padding:28px 20px 60px}
+.moments h2{font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.moment{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--paper);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.moment strong{display:block;font-size:15px}.moment span{display:block;font-size:14px;color:var(--muted);margin-top:2px}
+.moment[aria-pressed=true]{border-color:var(--brand);box-shadow:inset 3px 0 0 var(--brand)}
+.why{margin-top:22px;border-top:1px solid var(--line);padding-top:16px}
+.why h3{font-size:15px;margin-bottom:8px}.why ul{margin:0;padding-left:18px;font-size:14px;color:var(--muted)}.why li{margin:6px 0}
+.lab-switch{display:flex;align-items:center;gap:10px;font-size:14px;margin-top:16px;color:var(--muted)}
+.lab-switch input{width:18px;height:18px;accent-color:var(--brand)}
+
+.fakechat{background:var(--paper);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+.fakechat-head{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line);font-size:14px;color:var(--muted)}
+.fakechat-head b{color:var(--ink);font-weight:600}
+.dot3{display:flex;gap:5px}.dot3 i{width:9px;height:9px;border-radius:50%;background:var(--line-strong)}
+.thread{padding:24px 24px 12px;display:flex;flex-direction:column;gap:18px;max-width:760px;margin:0 auto}
+.msg{font-size:15.5px;line-height:1.6;max-width:100%}
+.msg.user{align-self:flex-end;background:var(--chat-user);padding:11px 15px;border-radius:16px 16px 4px 16px;max-width:82%}
+.msg.ai{display:flex;gap:12px}
+.ai-av{flex:0 0 30px;height:30px;border-radius:9px;background:var(--sunk);border:1px solid var(--line);display:grid;place-items:center;font-size:13px;font-weight:700;color:var(--muted)}
+.msg.ai .body{flex:1;min-width:0}
+.tool-note{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.composer{margin:8px 24px 20px;max-width:712px;border:1px solid var(--line);border-radius:14px;padding:12px 14px;color:var(--muted);font-size:15px;display:flex;justify-content:space-between;align-items:center;margin-left:auto;margin-right:auto}
+.composer span.k{border:1px solid var(--line);border-radius:8px;padding:2px 9px;font-size:13px}
+.msg.enter{animation:rise .35s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ============ WIDGET ============ */
+.gyp{--h:600px;height:var(--h);width:100%;max-width:680px;display:flex;flex-direction:column;background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:10px;position:relative}
+.gyp.narrow{--h:560px;max-width:380px}
+.gyp-head{flex:0 0 52px;display:flex;align-items:center;gap:10px;padding:0 12px 0 14px;border-bottom:1px solid var(--line)}
+.crumbs{display:flex;align-items:center;gap:6px;min-width:0;font-size:14px;color:var(--muted);flex:1;white-space:nowrap;overflow:hidden}
+.crumbs b{color:var(--ink);font-weight:650;overflow:hidden;text-overflow:ellipsis}
+.seg{display:flex;background:var(--sunk);border-radius:9px;padding:3px}
+.seg button{border:0;background:transparent;border-radius:7px;padding:0 12px;min-height:34px;font-size:14px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed=true]{background:var(--paper);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.gyp-head .icon-btn{min-height:34px;padding:0 9px;border-radius:8px}
+.stage{position:relative;flex:1;min-height:0;overflow:hidden;background:
+  radial-gradient(circle at 50% 50%, var(--sunk) 0 1px, transparent 1.5px) 0 0/22px 22px}
+.stage svg.wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.center{position:absolute;transform:translate(-50%,-50%);width:118px;height:118px;border-radius:50%;background:var(--ab);border:2px solid var(--a);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px;z-index:2}
+.center .e{font-size:24px;line-height:1}.center b{font-size:16px;margin-top:4px;line-height:1.2}.center small{font-size:13px;color:var(--muted);line-height:1.2;margin-top:2px}
+.node{position:absolute;transform:translate(-50%,-50%);z-index:3;min-width:132px;max-width:178px;background:var(--paper);border:1.5px solid var(--a);border-radius:12px;padding:7px 11px 8px;text-align:left;box-shadow:0 1px 2px rgba(0,0,0,.06);transition:opacity .3s,transform .35s}
+.node .t{display:flex;gap:6px;align-items:flex-start;font-size:15px;font-weight:650;line-height:1.25}
+.node .m{font-size:13px;color:var(--muted);margin-top:2px}
+.node.proposed{border-style:dashed;background:var(--ab)}
+.node.proposed::after{content:"proposta";position:absolute;top:-10px;right:8px;font-size:12px;font-weight:700;background:var(--paper);color:var(--a);border:1px dashed var(--a);border-radius:999px;padding:0 7px;line-height:18px}
+.node .plus{position:absolute;top:-11px;right:-9px;font-size:13px;font-weight:750;background:var(--ab);color:var(--a);border:1.5px dashed var(--a);border-radius:999px;padding:0 7px;line-height:19px}
+.node.pop{animation:pop .5s ease}
+@keyframes pop{0%{transform:translate(-50%,-50%) scale(1)}40%{transform:translate(-50%,-50%) scale(1.07)}100%{transform:translate(-50%,-50%) scale(1)}}
+.node.hidden{opacity:0;pointer-events:none}
+.gyp.narrow .node{min-width:0;max-width:128px;padding:6px 9px}.gyp.narrow .node .m{display:none}.gyp.narrow .center{width:88px;height:88px}.gyp.narrow .center small{display:none}.gyp.narrow .center .e{font-size:20px}
+.stage-hint{position:absolute;left:12px;bottom:10px;font-size:13px;color:var(--muted);background:var(--paper);padding:2px 8px;border-radius:6px;border:1px solid var(--line);z-index:4}
+
+/* Tray */
+.tray{flex:0 0 auto;max-height:52%;display:flex;flex-direction:column;border-top:1px solid var(--line);background:var(--paper)}
+.tray-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:12px 14px 6px}
+.tray-head b{font-size:15px}.tray-head span{font-size:13px;color:var(--muted)}
+.tray-list{overflow:auto;padding:0 8px;flex:1;min-height:0}
+.row{display:flex;gap:10px;align-items:flex-start;padding:8px 6px;border-radius:10px}
+.row:hover{background:var(--sunk)}
+.row input[type=checkbox]{width:20px;height:20px;margin-top:1px;accent-color:var(--brand);flex:0 0 auto}
+.row .rt{font-size:15px;line-height:1.35}.row .rt em{font-style:normal;color:var(--muted)}
+.row .rd{font-size:14px;color:var(--muted);margin-top:2px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:650;border-radius:6px;padding:0 6px;line-height:20px;background:var(--ab);color:var(--a);margin-right:4px;vertical-align:1px}
+.chip.u{background:var(--warn-bg);color:var(--warn)}
+.chip.g{background:var(--sunk);color:var(--muted);font-weight:600}
+.row select{font-size:13px;border:1px solid var(--line);background:var(--paper);border-radius:7px;padding:2px 4px;margin-left:2px;min-height:26px}
+.tray-actions{display:flex;gap:8px;align-items:center;padding:10px 14px 12px;border-top:1px solid var(--line)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--line);background:var(--paper);font-size:15px;font-weight:650}
+.btn.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand);flex:1}
+.btn.primary:disabled{opacity:.45;cursor:default}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--ink)}
+.fine{font-size:13px;color:var(--muted);padding:0 14px 10px}
+.done-bar{display:flex;align-items:center;gap:10px;padding:14px;font-size:15px}
+.done-bar .ok{width:28px;height:28px;border-radius:50%;background:var(--ok-bg);color:var(--ok);display:grid;place-items:center;font-weight:800;flex:0 0 auto;animation:pop2 .4s ease}
+@keyframes pop2{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
+.done-bar .grow{flex:1;min-width:0}.done-bar small{display:block;color:var(--muted);font-size:14px}
+.resume{display:flex;gap:10px;align-items:center;padding:12px 14px;font-size:14px;color:var(--muted)}
+.resume b{color:var(--ink);font-weight:600}
+
+/* Agora */
+.agora{position:absolute;inset:0;display:flex;flex-direction:column;padding:16px;gap:12px;overflow:auto}
+.agora-card{border:2px solid var(--a);border-radius:16px;padding:16px 18px;background:var(--paper);position:relative;transition:opacity .3s,transform .3s}
+.agora-card.leave{opacity:0;transform:translateY(-10px)}
+.agora-card .path{font-size:13px;color:var(--a);font-weight:650}
+.agora-card h3{font-size:21px;line-height:1.25;margin:6px 0 10px;letter-spacing:-.3px}
+.step{display:flex;gap:10px;background:var(--ab);border-radius:10px;padding:10px 12px;font-size:15px}
+.step b{display:block;font-size:13px;color:var(--a);text-transform:uppercase;letter-spacing:.05em}
+.agora-card .why2{font-size:14px;color:var(--muted);margin-top:10px}
+.agora-btns{display:flex;gap:8px;margin-top:14px}
+.after h4{margin:4px 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.after .li{display:flex;align-items:center;gap:8px;font-size:15px;padding:6px 2px;border-bottom:1px solid var(--line)}
+.after .li .dotc{width:10px;height:10px;border-radius:50%;background:var(--a);flex:0 0 auto}
+.quiet{font-size:14px;color:var(--muted);text-align:center}
+
+/* Empty */
+.empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:12px}
+.empty .ring{width:120px;height:120px;border-radius:50%;border:2px dashed var(--line-strong);display:grid;place-items:center;font-size:30px;position:relative}
+.empty .ring i{position:absolute;width:14px;height:14px;border-radius:50%;border:2px dashed var(--line-strong)}
+.empty h3{font-size:19px}.empty p{font-size:15px;color:var(--muted);max-width:360px}
+.starter{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.starter button{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:0 14px;min-height:40px;font-size:14px}
+
+.toast{position:absolute;left:50%;top:62px;transform:translateX(-50%);background:var(--ink);color:var(--paper);font-size:14px;padding:7px 14px;border-radius:999px;z-index:20;animation:rise .3s ease;white-space:nowrap}
+
+/* ============ LANDING ============ */
+.lp{max-width:1120px;margin:0 auto;padding:0 24px}
+.lp-nav{display:flex;align-items:center;gap:22px;padding:18px 0}
+.lp-nav a{color:var(--muted);text-decoration:none;font-size:15px}.lp-nav a:hover{color:var(--ink)}
+.lp-nav .sp{flex:1}
+.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center;padding:36px 0 56px}
+.eyebrow{font-size:14px;font-weight:650;color:var(--brand);letter-spacing:.02em}
+.hero h1{font-size:50px;line-height:1.05;letter-spacing:-1.6px;margin:12px 0 18px}
+.hero p.sub{font-size:19px;color:var(--muted);max-width:540px}
+.hero .ctas{display:flex;gap:10px;margin-top:26px;flex-wrap:wrap}
+.hero .micro{font-size:14px;color:var(--muted);margin-top:12px}
+.demo{background:var(--paper);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:16px;position:relative}
+.demo .dmsg{font-size:15px;background:var(--chat-user);border-radius:14px 14px 4px 14px;padding:10px 13px;margin-left:auto;max-width:88%;min-height:48px}
+.demo-map{position:relative;height:250px;margin-top:12px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.demo-foot{display:flex;align-items:center;gap:10px;margin-top:12px;min-height:44px}
+.demo-foot .btn.primary{flex:0 0 auto}
+.demo-foot .lbl{font-size:14px;color:var(--muted);flex:1}
+.demo .pause{position:absolute;top:-14px;right:14px;font-size:13px;min-height:30px;padding:0 10px;border-radius:999px;background:var(--paper)}
+.btn.pressed{transform:scale(.97);box-shadow:0 0 0 4px var(--brand-soft)}
+.proofs{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:12px 0 56px}
+.proof{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:22px}
+.proof .n{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.06em}
+.proof h3{font-size:20px;margin:8px 0 8px;letter-spacing:-.3px}.proof p{font-size:15px;color:var(--muted)}
+.proof .vis{margin-top:16px;border-top:1px solid var(--line);padding-top:14px;font-size:14px}
+section.block{padding:52px 0;border-top:1px solid var(--line)}
+section.block h2{font-size:32px;letter-spacing:-.8px;line-height:1.15;max-width:700px}
+section.block .lead{font-size:17px;color:var(--muted);max-width:640px;margin-top:10px}
+.timeline{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:28px}
+.tl{border-top:3px solid var(--line-strong);padding-top:12px}
+.tl.hi{border-color:var(--brand)}
+.tl .s{font-size:13px;font-weight:700;color:var(--brand)}.tl b{display:block;font-size:16px;margin:4px 0}.tl p{font-size:14px;color:var(--muted)}
+.data-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:26px;align-items:start}
+pre.md{margin:0;background:var(--sunk);border:1px solid var(--line);border-radius:12px;padding:16px;font:14px/1.6 ui-monospace,Consolas,"SFMono-Regular",monospace;white-space:pre-wrap;color:var(--ink)}
+pre.md .h{color:var(--brand);font-weight:700}
+.facts{list-style:none;margin:0;padding:0}
+.facts li{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:16px}
+.facts li .ic{flex:0 0 26px;height:26px;border-radius:7px;display:grid;place-items:center;background:var(--ok-bg);color:var(--ok);font-weight:800;font-size:14px}
+.facts li .ic.soon{background:var(--sunk);color:var(--muted)}
+.facts small{display:block;color:var(--muted);font-size:14px}
+.cap{font-size:13px;color:var(--muted);margin-top:8px}
+.billing{display:inline-flex;margin-top:22px;background:var(--sunk);border-radius:10px;padding:4px}
+.billing button{border:0;background:transparent;padding:0 14px;min-height:38px;border-radius:7px;font-size:14px;font-weight:650;color:var(--muted)}
+.billing button[aria-pressed=true]{background:var(--paper);color:var(--ink)}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:20px}
+.plan{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:24px;display:flex;flex-direction:column}
+.plan.main{border:2px solid var(--brand)}
+.plan .pn{font-size:15px;font-weight:700}.plan .pd{font-size:14px;color:var(--muted);min-height:44px;margin-top:2px}
+.price{font-size:40px;font-weight:750;letter-spacing:-1.2px;margin:14px 0 2px}.price small{font-size:16px;font-weight:500;color:var(--muted);letter-spacing:0}
+.plan .pnote{font-size:14px;color:var(--muted);min-height:22px}
+.plan ul{list-style:none;padding:0;margin:18px 0 22px;flex:1}
+.plan li{font-size:15px;padding:6px 0 6px 24px;position:relative}
+.plan li::before{content:"✓";position:absolute;left:0;color:var(--ok);font-weight:800}
+.plan li.no::before{content:"–";color:var(--muted)}
+.plan .badge{align-self:flex-start;font-size:13px;font-weight:700;color:var(--brand);background:var(--brand-soft);border-radius:999px;padding:1px 10px;margin-bottom:10px}
+.plan .btn{width:100%}
+.fair{margin-top:18px;font-size:15px;color:var(--muted);max-width:760px}
+.faq{display:grid;grid-template-columns:1fr 1fr;gap:4px 32px;margin-top:20px}
+.faq details{border-bottom:1px solid var(--line);padding:14px 0}
+.faq summary{font-size:16px;font-weight:650;cursor:pointer}
+.faq p{font-size:15px;color:var(--muted);margin-top:8px}
+.lp-foot{display:flex;gap:20px;justify-content:space-between;padding:28px 0 50px;border-top:1px solid var(--line);font-size:14px;color:var(--muted);flex-wrap:wrap}
+
+/* Post-pay */
+.modal-bg{position:fixed;inset:0;background:rgba(10,12,15,.5);display:none;align-items:center;justify-content:center;padding:20px;z-index:100}
+.modal-bg.on{display:flex}
+.modal{background:var(--paper);border-radius:20px;max-width:480px;width:100%;padding:28px;box-shadow:var(--shadow);animation:rise .35s ease}
+.modal .mark{width:52px;height:52px;border-radius:14px;background:var(--brand-soft);display:grid;place-items:center;margin-bottom:16px}
+.modal h2{font-size:26px;letter-spacing:-.6px;line-height:1.15}
+.modal p{font-size:16px;color:var(--muted);margin-top:10px}
+.receipt{margin:18px 0;border:1px solid var(--line);border-radius:12px;font-size:15px}
+.receipt div{display:flex;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line)}.receipt div:last-child{border:0}
+.receipt span{color:var(--muted)}
+.palette{display:flex;gap:8px;margin-top:8px}
+.palette i{width:28px;height:28px;border-radius:8px;background:var(--ab);border:2px solid var(--a)}
+.sim{font-size:13px;color:var(--muted);text-align:center;margin-top:14px}
+
+@media (max-width:980px){
+  .chat-layout{grid-template-columns:1fr}
+  .hero{grid-template-columns:1fr}.hero h1{font-size:38px}
+  .proofs,.plans{grid-template-columns:1fr}.timeline{grid-template-columns:1fr 1fr}.data-grid,.faq{grid-template-columns:1fr}
+  .lp-nav a.hide-sm{display:none}
+}
+@media (max-width:560px){.lab-bar .tag{display:none}.thread{padding:16px 12px}.lab-tabs button{padding:8px 10px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="mark" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" fill="currentColor"/><g fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="3.6" r="1.9"/><circle cx="20" cy="9.4" r="1.9"/><circle cx="17" cy="19" r="1.9"/><circle cx="7" cy="19" r="1.9"/><circle cx="4" cy="9.4" r="1.9"/></g><g stroke="currentColor" stroke-width="1.2" opacity=".55"><path d="M12 8.8V5.5M15 11l3.2-1.1M14 14.6l2 2.8M10 14.6l-2 2.8M9 11l-3.2-1.1"/></g></symbol>
+</svg>
+
+<div class="lab-bar">
+  <span class="brand"><svg width="22" height="22" style="color:var(--brand)"><use href="#mark"/></svg>GrowYourPlan</span>
+  <span class="tag">laboratório de design · simulação</span>
+  <div class="lab-tabs" role="tablist" aria-label="Superfícies">
+    <button role="tab" aria-selected="true" data-view="chat">1 · Dentro do chat</button>
+    <button role="tab" aria-selected="false" data-view="land">2 · Landing e preço</button>
+  </div>
+  <button class="icon-btn" id="themeBtn" aria-label="Alternar tema claro e escuro"><span id="themeIco">◐</span><span id="themeLbl">Escuro</span></button>
+</div>
+
+<!-- ================= 1. CHAT ================= -->
+<main class="view on" id="v-chat">
+  <div class="chat-layout">
+    <aside class="moments" aria-label="Momentos da conversa">
+      <h2>Quatro momentos</h2>
+      <button class="moment" data-s="proposta" aria-pressed="true"><strong>Proposta no mapa</strong><span>“Monta a lista de espera do curso?”</span></button>
+      <button class="moment" data-s="despejo" aria-pressed="false"><strong>Despejar a cabeça</strong><span>Sete pendências misturadas, uma frase</span></button>
+      <button class="moment" data-s="agora" aria-pressed="false"><strong>“O que eu faço agora?”</strong><span>Uma coisa só, com o primeiro passo</span></button>
+      <button class="moment" data-s="vazio" aria-pressed="false"><strong>Primeira vez</strong><span>Mapa vazio, sem tela de boas-vindas</span></button>
+      <label class="lab-switch"><input type="checkbox" id="narrowT"> Coluna estreita (380 × 560px)</label>
+      <div class="why" id="whyBox"></div>
+    </aside>
+    <section>
+      <div class="fakechat">
+        <div class="fakechat-head"><span class="dot3"><i></i><i></i><i></i></span><b>Assistente</b> · conversa simulada, sem marca real</div>
+        <div class="thread" id="thread"></div>
+        <div class="composer"><span>Escreva para o assistente…</span><span class="k">Enviar</span></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- ================= 2. LANDING ================= -->
+<main class="view" id="v-land">
+  <div class="lp">
+    <nav class="lp-nav" aria-label="Site">
+      <span class="brand"><svg width="24" height="24" style="color:var(--brand)"><use href="#mark"/></svg>GrowYourPlan</span>
+      <a href="#como" class="hide-sm">Como funciona</a><a href="#dados" class="hide-sm">Seus dados</a><a href="#preco">Preço</a>
+      <span class="sp"></span>
+      <a href="#preco">Entrar</a>
+      <button class="btn primary" style="flex:0 0 auto" data-go="#preco">Usar no ChatGPT</button>
+    </nav>
+
+    <header class="hero">
+      <div>
+        <div class="eyebrow">Para quem tem 14 abas abertas na cabeça</div>
+        <h1>Despeje tudo no chat. Aprove um mapa em um toque.</h1>
+        <p class="sub">O GrowYourPlan transforma a bagunça de projetos, freelas e ideias num mapa de até cinco níveis, dentro do ChatGPT que você já paga. A IA propõe. Nada entra sem o seu toque. E sai tudo em Markdown quando você quiser.</p>
+        <div class="ctas"><button class="btn primary" style="flex:0 0 auto" data-go="#como">Começar grátis</button><button class="btn" data-go="#preco">Ver preço</button></div>
+        <p class="micro">Grátis para sempre com 1 mapa. Sem cartão. Sem outra assinatura de IA.</p>
+      </div>
+      <div class="demo" aria-label="Demonstração animada">
+        <button class="icon-btn pause" id="demoPause" aria-pressed="false">❚❚ Pausar</button>
+        <div class="dmsg" id="demoMsg"></div>
+        <div class="demo-map stage" id="demoStage"><svg class="wires"></svg></div>
+        <div class="demo-foot"><span class="lbl" id="demoLbl"></span><button class="btn primary" id="demoBtn" tabindex="-1">Aceitar 4</button></div>
+      </div>
+    </header>
+
+    <div class="proofs">
+      <article class="proof"><div class="n">PROVA 1</div><h3>Mora onde você já conversa.</h3><p>O mapa aparece dentro do ChatGPT. Ele lê o que você já organizou antes de responder, então você para de recontar sua vida a cada conversa.</p><div class="vis">“Li seu mapa. Você já tem a página de venda como rascunho, então…”</div></article>
+      <article class="proof"><div class="n">PROVA 2</div><h3>Nada entra sem você.</h3><p>Cada sugestão chega tracejada. Você marca o que serve, aceita num toque e pode desfazer. O mapa confirmado é seu, não da IA.</p><div class="vis"><span class="chip c-iris" style="border:1px dashed var(--a)">proposta</span> → <span class="chip c-iris">no mapa</span> · <u>Desfazer</u></div></article>
+      <article class="proof"><div class="n">PROVA 3</div><h3>Sai em Markdown, sempre.</h3><p>Exporte o mapa inteiro como um arquivo .md legível, em qualquer plano, inclusive o gratuito. Se um dia você for embora, seu plano vai junto.</p><div class="vis"><code>## 🎓 Curso Aquarela sem medo</code></div></article>
+    </div>
+
+    <section class="block" id="como">
+      <h2>Do primeiro clique ao primeiro mapa aprovado, em um minuto.</h2>
+      <p class="lead">Nada de tutorial, template para escolher ou entrevista de 20 perguntas. Você fala do jeito que está na cabeça. O mapa vem pronto para revisar.</p>
+      <div class="timeline">
+        <div class="tl"><span class="s">0 s</span><b>Vê a demo</b><p>O topo desta página mostra o ciclo inteiro, sem clicar.</p></div>
+        <div class="tl"><span class="s">10 s</span><b>Usar no ChatGPT</b><p>Abre o app no ChatGPT. Login com Google, um toque.</p></div>
+        <div class="tl"><span class="s">25 s</span><b>Uma pergunta</b><p>“O que está ocupando sua cabeça?” Nenhum formulário.</p></div>
+        <div class="tl"><span class="s">35 s</span><b>Despeja</b><p>Uma frase longa e bagunçada. Do jeito que vier.</p></div>
+        <div class="tl hi"><span class="s">50 s</span><b>Vê tracejado</b><p>Áreas e notas aparecem como propostas, cada uma com cor própria.</p></div>
+        <div class="tl hi"><span class="s">60 s</span><b>Aceita</b><p>“Aceitar 7.” O mapa fica sólido. Seu primeiro mapa é seu.</p></div>
+      </div>
+    </section>
+
+    <section class="block" id="dados">
+      <h2>Seus dados são seus. Dá para conferir.</h2>
+      <p class="lead">Se você usa Obsidian, já sabe: o que importa é conseguir abrir seus arquivos sem pedir licença a ninguém. Este é o formato da exportação de hoje.</p>
+      <div class="data-grid">
+        <div>
+<pre class="md"><span class="h"># Meu ano em projetos</span>
+
+<span class="h">## Onde parei</span>
+
+Testei a luz da janela para gravar. Falta o tripé.
+
+<span class="h">## Foco</span>
+
+- Gravar a aula teste — Prender o celular no tripé
+- Enviar 2ª versão do logo — Exportar as duas opções
+
+<span class="h">## Gravação</span>
+
+Caminho: Meu ano em projetos > Curso Aquarela sem medo > Gravação
+
+<span class="h">### Gravar a aula teste</span>
+
+- Agora · Importante
+
+Primeiro passo: Prender o celular no tripé e gravar só a introdução.</pre>
+          <p class="cap">Trecho fictício no formato real do botão “Exportar Markdown”. Também exporta JSON completo.</p>
+        </div>
+        <ul class="facts">
+          <li><span class="ic">✓</span><div>Exportar Markdown e JSON em qualquer plano<small>Exportação nunca fica atrás do pagamento.</small></div></li>
+          <li><span class="ic">✓</span><div>Nenhuma IA roda nos nossos servidores<small>Quem pensa é o seu ChatGPT. Nós guardamos o mapa e as confirmações.</small></div></li>
+          <li><span class="ic">✓</span><div>O assistente só muda o mapa com seu aceite<small>Sem aceite, o mapa confirmado fica exatamente como estava.</small></div></li>
+          <li><span class="ic">✓</span><div>Sem fontes externas, sem rastreadores no widget<small>O mapa dentro do chat não carrega nada de fora.</small></div></li>
+          <li><span class="ic soon">…</span><div>Em breve: exportar como pasta do Obsidian<small>Uma nota por arquivo, com propriedades e links entre notas. Ainda não existe.</small></div></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="block" id="preco">
+      <h2>Preço justo, porque a IA é sua.</h2>
+      <p class="lead">Você já paga pelo modelo. Aqui você paga só pelo lugar onde o seu plano mora: guardado, versionado e exportável.</p>
+      <div class="billing" role="group" aria-label="Período"><button aria-pressed="true" data-bill="m">Mensal</button><button aria-pressed="false" data-bill="y">Anual · 2 meses grátis</button></div>
+      <div class="plans">
+        <article class="plan">
+          <div class="pn">Grátis</div><div class="pd">Para organizar uma frente da vida e ver se cola.</div>
+          <div class="price">R$ 0</div><div class="pnote">para sempre</div>
+          <ul><li>1 mapa com os 5 níveis</li><li>Até 80 notas</li><li>ChatGPT completo: ler, propor, aceitar</li><li>Desfazer a última mudança</li><li>Exportar Markdown e JSON</li></ul>
+          <button class="btn">Começar grátis</button>
+        </article>
+        <article class="plan main">
+          <span class="badge">Para várias frentes ao mesmo tempo</span>
+          <div class="pn">Pro</div><div class="pd">Para quem tem projeto, freela e curso ao mesmo tempo.</div>
+          <div class="price" id="proPrice">R$ 16<small>/mês</small></div><div class="pnote" id="proNote">ou R$ 160 por ano</div>
+          <ul><li>Mapas e notas ilimitados</li><li>Histórico de versões de 90 dias</li><li>Revisão da semana: o que você fechou</li><li>Skills e fontes ilimitadas</li><li>Tudo do Grátis</li></ul>
+          <button class="btn primary" data-pay="pro">Assinar Pro</button>
+        </article>
+        <article class="plan">
+          <div class="pn">Fundador</div><div class="pd">Pagamento único enquanto o produto estiver em piloto.</div>
+          <div class="price">R$ 290</div><div class="pnote">uma vez, Pro sem mensalidade</div>
+          <ul><li>Tudo do Pro, sem cobrança recorrente</li><li>Canal direto com quem constrói</li><li>Voto nas próximas funções</li><li class="no">Sem prazo inventado: avisamos com 30 dias antes de encerrar esta opção</li></ul>
+          <button class="btn" data-pay="fundador">Ser fundador</button>
+        </article>
+      </div>
+      <p class="fair">Cancelar fica em Conta › Plano, num botão visível, sem ligação nem formulário. Se você cancelar, nada é apagado: seus mapas continuam abertos para leitura e exportação. Você só volta ao limite do Grátis para criar coisas novas.</p>
+    </section>
+
+    <section class="block">
+      <h2>Perguntas honestas</h2>
+      <div class="faq">
+        <details open><summary>Preciso pagar outra IA?</summary><p>Não. O GrowYourPlan não chama nenhum modelo. Ele funciona dentro do ChatGPT que você já usa.</p></details>
+        <details><summary>A IA pode mudar meu mapa sozinha?</summary><p>Não. Ela só envia propostas. Você vê o que muda, desmarca o que não quer e aceita. Ainda dá para desfazer.</p></details>
+        <details><summary>Funciona para TDAH?</summary><p>Foi desenhado para cabeças cheias: um nível por vez, uma coisa em “Agora”, um “onde parei” para voltar sem esforço. Sem pontos, sequências ou alertas de culpa.</p></details>
+        <details><summary>Substitui o Obsidian?</summary><p>Não precisa. O Obsidian guarda o que você pensa; o GrowYourPlan organiza o que você vai fazer. Exporte em Markdown e leve junto.</p></details>
+        <details><summary>E se o ChatGPT não estiver aberto?</summary><p>O mapa também abre no site, onde você edita à mão, sem IA.</p></details>
+        <details><summary>Posso pedir reembolso?</summary><p>Sim, em 14 dias, por um botão na própria conta.</p></details>
+      </div>
+    </section>
+
+    <footer class="lp-foot"><span>GrowYourPlan · piloto · feito no Brasil</span><span>Privacidade · Termos · Exportar meus dados</span></footer>
+  </div>
+</main>
+
+<div class="modal-bg" id="payModal" role="dialog" aria-modal="true" aria-labelledby="payTitle">
+  <div class="modal">
+    <div class="mark"><svg width="28" height="28" style="color:var(--brand)"><use href="#mark"/></svg></div>
+    <h2 id="payTitle">Pronto. Seu mapa não mudou, só perdeu o teto.</h2>
+    <p id="payText">Tudo continua onde estava. Agora você pode criar outros mapas e voltar a qualquer versão dos últimos 90 dias.</p>
+    <div class="receipt" id="payReceipt"></div>
+    <p style="font-size:15px;margin-top:0">Um toque que vale a pena agora: dar uma cor para cada área.</p>
+    <div class="palette"><i class="c-iris"></i><i class="c-coral"></i><i class="c-leaf"></i><i class="c-amber"></i><i class="c-teal"></i><i class="c-plum"></i></div>
+    <div style="display:flex;gap:8px;margin-top:20px"><button class="btn primary" id="payClose">Voltar ao meu mapa</button><button class="btn ghost" id="payClose2">Fechar</button></div>
+    <p class="sim">Simulação: o checkout real abriria antes desta tela.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* Theme */
+const root=document.documentElement;
+function setTheme(t){root.dataset.theme=t;$('#themeLbl').textContent=t==='dark'?'Claro':'Escuro';}
+setTheme(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+$('#themeBtn').onclick=()=>{setTheme(root.dataset.theme==='dark'?'light':'dark');layoutAll();};
+
+/* Tabs */
+$$('.lab-tabs button').forEach(b=>b.onclick=()=>{
+  $$('.lab-tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  $$('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+b.dataset.view));
+  window.scrollTo(0,0); layoutAll();
+});
+
+/* ---------- Data ---------- */
+const A={
+  curso:{e:'🎓',t:'Curso',full:'Curso Aquarela sem medo',c:'iris'},
+  freela:{e:'🎨',t:'Freela Padaria',full:'Freela · Padaria Fermento',c:'coral'},
+  app:{e:'🌱',t:'App Regador',full:'App Regador',c:'leaf'},
+  grana:{e:'💸',t:'Dinheiro',full:'Dinheiro',c:'amber'},
+  casa:{e:'🏠',t:'Casa e cabeça',full:'Casa e cabeça',c:'teal'}
+};
+
+const S={
+ proposta:{
+  why:['Mapa no topo, decisão embaixo: a bandeja de propostas é a parte que pede ação, então ela fica fixa e o mapa encolhe.','Cada mudança é uma linha com caixa marcada. Desmarcar é o jeito de dizer “isso não”. O botão conta o que vai entrar.','Depois de aceitar, o tracejado vira sólido no lugar, e o Desfazer fica visível sem prazo.'],
+  thread:[{u:'Quero começar a juntar gente interessada no curso antes de gravar tudo. Monta isso no mapa?'},
+   {ai:'Li seu mapa. A página de venda ainda é rascunho, então proponho uma lista de espera ligada a ela, sem mexer no roteiro das aulas. Também sugiro trazer “Definir preço” para Agora, porque a lista precisa de um valor de referência. São 4 mudanças:',tool:'Leu o mapa · abriu GrowYourPlan'}],
+  view:'map', crumbs:['Meu ano','🎓 Curso'],
+  center:{e:'🎓',t:'Curso',sub:'Aquarela sem medo',c:'iris'},
+  nodes:[{id:'rot',e:'📝',t:'Roteiro das aulas',m:'4 notas'},{id:'grav',e:'🎬',t:'Gravação',m:'2 notas · 1 em foco'},{id:'pag',e:'🧾',t:'Página de venda',m:'2 notas'},{id:'div',e:'📣',t:'Divulgação',m:'1 nota'},{id:'lista',e:'✉️',t:'Lista de espera',m:'1 nota',isNew:true}],
+  props:[
+   {id:'p1',node:'lista',creates:true,kind:'Subárea nova',t:'Lista de espera',where:'em 🎓 Curso'},
+   {id:'p2',node:'lista',kind:'Nota nova',t:'Formulário de interesse',where:'em Lista de espera',d:'Primeiro passo: duplicar o formulário do freela e trocar as 3 perguntas.'},
+   {id:'p3',node:'div',kind:'Nota nova',t:'Post: bastidores da aula 1',where:'em Divulgação'},
+   {id:'p4',node:'pag',kind:'Mover',t:'“Definir preço” vai para Agora',where:'em Página de venda'}],
+  followUp:'Anotado no mapa. Quando quiser, eu escrevo as três perguntas do formulário com você.'
+ },
+ despejo:{
+  why:['O despejo é o momento “uau”: uma frase bagunçada vira itens já dentro das áreas certas, cada uma com sua cor.','Quando o assistente não tem certeza, ele marca “palpite”. Um toque no seletor muda a área, e o mapa acima atualiza na hora.','Urgência só aparece quando a pessoa disse um prazo. Nada é inventado.'],
+  thread:[{u:'tá tudo misturado. preciso mandar a 2ª versão do logo pra padaria até sexta, pagar o DAS, o app tá com bug no lembrete de rega, quero gravar a aula teste, responder o cara do orçamento do cardápio, renovar o domínio do app e comprar papel 300g'},
+   {ai:'Separei em 7 itens e coloquei cada um numa área que você já tem. Marquei como urgente só o que tinha prazo. O papel eu chutei que é para o curso; confira:',tool:'Leu o mapa · abriu GrowYourPlan'}],
+  view:'map', crumbs:['Meu ano'],
+  center:{e:'🗺️',t:'Meu ano',sub:'em projetos',c:'root'},
+  nodes:Object.keys(A).map(k=>({id:k,e:A[k].e,t:A[k].t,m:{curso:'9 notas',freela:'6 notas',app:'11 notas',grana:'3 notas',casa:'4 notas'}[k],c:A[k].c})),
+  triage:true,
+  props:[
+   {id:'t1',area:'freela',t:'Enviar 2ª versão do logo',u:'até sexta'},
+   {id:'t2',area:'freela',t:'Responder orçamento do cardápio'},
+   {id:'t3',area:'grana',t:'Pagar o DAS de novembro',u:'tem vencimento'},
+   {id:'t4',area:'app',t:'Corrigir bug do lembrete de rega'},
+   {id:'t5',area:'app',t:'Renovar o domínio do app'},
+   {id:'t6',area:'curso',t:'Gravar a aula teste'},
+   {id:'t7',area:'curso',t:'Comprar papel 300g',guess:true}],
+  followUp:'Está tudo no mapa. Quer que eu escolha uma coisa para hoje, ou para por aqui?'
+ },
+ agora:{
+  why:['Quando a pergunta é “o que eu faço agora?”, o mapa some. Aparece uma coisa só, com o primeiro passo em destaque.','O motivo vem de dados do mapa (foco e relações), não de pontuação inventada.','“Agora não” não pune: guarda e mostra a próxima. “Fiz isso” conclui e sobe a próxima do foco, com Desfazer.'],
+  thread:[{u:'o que eu faço agora? tenho uns 40 minutos e pouca energia'},
+   {ai:'Pelo seu foco, a escolha de menor atrito para 40 minutos é esta. Leva uns 25, e o primeiro passo cabe em 5. Se não for hoje, tudo bem: o resto continua guardado.',tool:'Leu o foco · abriu GrowYourPlan em Agora'}],
+  view:'now', crumbs:['Meu ano','Foco'],
+  queue:[
+   {a:'curso',path:'🎓 Curso › Gravação',t:'Gravar a aula teste de 10 minutos',step:'Prender o celular no tripé e gravar só a introdução. Pode ficar feio.',why:'Está no seu foco e destrava → Lista de espera.',tags:['Em foco','Importante']},
+   {a:'freela',path:'🎨 Freela Padaria › Identidade',t:'Enviar a 2ª versão do logo',step:'Exportar as duas opções em PDF e escrever três linhas de contexto.',why:'Está no seu foco. Você marcou prazo: sexta.',tags:['Em foco','Urgente']},
+   {a:'app',path:'🌱 App Regador › Bugs',t:'Reproduzir o bug do lembrete',step:'Criar uma planta de teste com rega a cada 1 minuto.',why:'Está no seu foco.',tags:['Em foco']}]
+ },
+ vazio:{
+  why:['Sem onboarding em tela cheia: o primeiro estado já é útil e explica o produto em uma frase.','Os botões são frases prontas que a pessoa pode mandar no chat. Nenhum template de metodologia.','O anel tracejado antecipa o visual de proposta que vem a seguir.'],
+  thread:[{u:'Abre o GrowYourPlan'},{ai:'Seu mapa está vazio por enquanto. Pode me contar do jeito que vier; eu organizo e você aprova.',tool:'Abriu GrowYourPlan'}],
+  view:'empty', crumbs:['Meu primeiro mapa']
+ }
+};
+
+let cur='proposta', st={};
+function fresh(key){
+  const s=S[key];
+  st={key, state:'pending', on:{}, area:{}, guess:{}, accepted:{}, qi:0, doneCount:0};
+  (s.props||[]).forEach(p=>{st.on[p.id]=true; if(p.area) st.area[p.id]=p.area; if(p.guess) st.guess[p.id]=true;});
+}
+
+/* ---------- Thread ---------- */
+function renderThread(){
+  const s=S[cur], th=$('#thread'); th.innerHTML='';
+  s.thread.forEach((m,i)=>{
+    const el=document.createElement('div');
+    if(m.u){el.className='msg user';el.textContent=m.u;}
+    else{el.className='msg ai';el.innerHTML='<div class="ai-av" aria-hidden="true">IA</div><div class="body"><div class="tool-note">⚙ '+esc(m.tool)+'</div><p>'+esc(m.ai)+'</p>'+(i===s.thread.length-1?'<div id="wslot"></div>':'')+'</div>';}
+    th.appendChild(el);
+  });
+  $('#whyBox').innerHTML='<h3>Por que assim</h3><ul>'+s.why.map(w=>'<li>'+esc(w)+'</li>').join('')+'</ul>';
+  renderWidget();
+}
+function addFollow(text){
+  if(!text) return;
+  const el=document.createElement('div');el.className='msg ai enter';el.id='follow';
+  el.innerHTML='<div class="ai-av" aria-hidden="true">IA</div><div class="body"><div class="tool-note">⚙ Viu a confirmação</div><p>'+esc(text)+'</p></div>';
+  $('#thread').appendChild(el);
+}
+function removeFollow(){const f=$('#follow'); if(f) f.remove();}
+
+/* ---------- Widget ---------- */
+function renderWidget(){
+  const s=S[cur], slot=$('#wslot'); if(!slot) return;
+  const narrow=$('#narrowT').checked;
+  const crumbs=s.crumbs.map((c,i)=>i===s.crumbs.length-1?'<b>'+esc(c)+'</b>':esc(c)+' <span aria-hidden="true">›</span>').join(' ');
+  const showSeg=s.view==='map'||s.view==='now';
+  slot.innerHTML='<div class="gyp'+(narrow?' narrow':'')+'" role="region" aria-label="GrowYourPlan no chat">'+
+   '<div class="gyp-head"><svg width="20" height="20" style="color:var(--brand);flex:0 0 auto" aria-hidden="true"><use href="#mark"/></svg><div class="crumbs">'+crumbs+'</div>'+
+   (showSeg?'<div class="seg" role="group" aria-label="Visão"><button aria-pressed="'+(s.view==='map')+'" data-v="map">Mapa</button><button aria-pressed="'+(s.view==='now')+'" data-v="now">Agora</button></div>':'')+
+   '<button class="icon-btn" title="Tela cheia aparece só quando o chat oferece" aria-label="Tela cheia" disabled style="opacity:.5">⤢</button></div>'+
+   '<div class="stage" id="stage"><svg class="wires"></svg></div><div class="tray" id="tray"></div></div>';
+  $$('.seg button',slot).forEach(b=>b.onclick=()=>{ if(b.dataset.v!==s.view){ toast(b.dataset.v==='now'?'No chat real, o assistente abre direto nesta visão.':'O mapa completo continua aqui.'); } });
+  if(s.view==='map') drawMap(); else if(s.view==='now') drawNow(); else drawEmpty();
+  drawTray();
+}
+
+function nodesFor(){
+  const s=S[cur];
+  return s.nodes.map(n=>{
+    const c=n.c||s.center.c;
+    let plus=0, proposed=false, hidden=false;
+    if(s.triage){
+      if(st.state==='pending') plus=s.props.filter(p=>st.on[p.id]&&st.area[p.id]===n.id).length;
+    } else {
+      const linked=s.props.filter(p=>p.node===n.id);
+      if(n.isNew){
+        const cr=linked.find(p=>p.creates);
+        if(st.state==='accepted') hidden=!st.accepted[cr.id];
+        else { proposed=true; hidden=!st.on[cr.id]; }
+      } else if(st.state!=='accepted') plus=linked.filter(p=>st.on[p.id]).length;
+    }
+    return {...n,c,plus,proposed,hidden};
+  });
+}
+
+function drawMap(target){
+  const stage=target||$('#stage'); if(!stage) return;
+  const s=S[cur];
+  const old=$$('.node,.center,.stage-hint',stage); old.forEach(o=>o.remove());
+  const W=stage.clientWidth, H=stage.clientHeight, cx=W/2, cy=H/2;
+  const list=nodesFor(); const n=list.length;
+  const narrow=W<420; const rx=narrow?W/2-68:Math.max(110,W/2-92), ry=narrow?Math.max(60,H/2-26):Math.max(80,H/2-44);
+  let wires='';
+  const c=document.createElement('div'); c.className='center c-'+s.center.c;
+  c.style.left=cx+'px'; c.style.top=cy+'px';
+  c.innerHTML='<span class="e">'+s.center.e+'</span><b>'+esc(s.center.t)+'</b><small>'+esc(s.center.sub)+'</small>';
+  stage.appendChild(c);
+  list.forEach((nd,i)=>{
+    const ang=-Math.PI/2+i*(2*Math.PI/n);
+    const x=cx+rx*Math.cos(ang), y=cy+ry*Math.sin(ang);
+    const el=document.createElement('div');
+    el.className='node c-'+nd.c+(nd.proposed?' proposed':'')+(nd.hidden?' hidden':'')+(st.justAccepted&&st.touched&&st.touched[nd.id]?' pop':'');
+    el.style.left=x+'px'; el.style.top=y+'px';
+    el.innerHTML='<div class="t"><span aria-hidden="true">'+nd.e+'</span><span>'+esc(nd.t)+'</span></div><div class="m">'+esc(nd.m)+'</div>'+(nd.plus?'<span class="plus" aria-label="'+nd.plus+' propostas">+'+nd.plus+'</span>':'');
+    stage.appendChild(el);
+    if(!nd.hidden){
+      const col=getComputedStyle(el).getPropertyValue('--a').trim();
+      wires+='<line x1="'+cx+'" y1="'+cy+'" x2="'+x+'" y2="'+y+'" stroke="'+col+'" stroke-opacity=".55" stroke-width="1.5"'+(nd.proposed?' stroke-dasharray="5 5"':'')+'/>';
+    }
+  });
+  $('svg.wires',stage).innerHTML=wires;
+  if(!target){const h=document.createElement('div');h.className='stage-hint';h.textContent=s.triage?'Toque numa área para abrir':'Nível 2 de 5 · toque para abrir';stage.appendChild(h);}
+  st.justAccepted=false;
+}
+
+function drawNow(){
+  const s=S[cur], stage=$('#stage');
+  const q=s.queue, item=q[st.qi%q.length], A2=A[item.a];
+  const rest=q.filter((_,i)=>i!==st.qi%q.length);
+  stage.innerHTML='<div class="agora">'+
+   '<div class="agora-card c-'+A2.c+'" id="acard"><div class="path">'+esc(item.path)+' · Foco '+((st.qi%q.length)+1)+' de 3</div><h3>'+esc(item.t)+'</h3>'+
+   '<div class="step"><span aria-hidden="true">👉</span><div><b>Primeiro passo</b>'+esc(item.step)+'</div></div>'+
+   '<div class="why2">'+esc(item.why)+' '+item.tags.map(t=>'<span class="chip '+(t==='Urgente'?'u':'g')+'">'+esc(t)+'</span>').join('')+'</div>'+
+   '<div class="agora-btns"><button class="btn primary" id="didIt">✓ Fiz isso</button><button class="btn" id="notNow">Agora não</button></div></div>'+
+   '<div class="after"><h4>Depois, se der vontade</h4>'+rest.map(r=>'<div class="li c-'+A[r.a].c+'"><span class="dotc"></span>'+esc(r.t)+'</div>').join('')+'</div>'+
+   '<p class="quiet">Uma coisa por vez. O resto continua guardado no mapa.</p></div>';
+  $('#didIt').onclick=()=>{ st.state='accepted'; st.doneItem=item.t; st.doneCount++; animateCard(()=>{st.qi++; drawNow(); drawTray();}); };
+  $('#notNow').onclick=()=>{ animateCard(()=>{st.qi++; drawNow(); toast('Guardado para depois. Sem pressa.');}); };
+}
+function animateCard(fn){const c=$('#acard'); if(reduce||!c){fn();return;} c.classList.add('leave'); setTimeout(fn,260);}
+
+function drawEmpty(){
+  $('#stage').innerHTML='<div class="empty"><div class="ring">🗺️<i style="top:-8px;left:52px"></i><i style="bottom:6px;left:-6px"></i><i style="bottom:6px;right:-6px"></i></div>'+
+  '<h3>Seu mapa começa por uma frase.</h3><p>Conte no chat o que está ocupando sua cabeça. Eu separo em áreas, você aprova o que fizer sentido.</p>'+
+  '<div class="starter"><button data-ex="despejo">“Despejar tudo de uma vez”</button><button>“Começar por um projeto”</button><button>“Importar uma lista que já tenho”</button></div></div>';
+  $$('.starter button').forEach(b=>b.onclick=()=>{ if(b.dataset.ex) pick('despejo'); else toast('No chat real, isto vira sua próxima mensagem.'); });
+}
+
+function drawTray(){
+  const s=S[cur], tray=$('#tray'); if(!tray) return;
+  if(s.view==='empty'){tray.innerHTML='<div class="resume">🔒 <span><b>Nada é salvo sem você.</b> O assistente propõe; você aceita aqui.</span></div>';return;}
+  if(s.view==='now'){
+    if(st.state==='accepted'){
+      tray.innerHTML='<div class="done-bar"><span class="ok">✓</span><div class="grow"><b>“'+esc(st.doneItem)+'” concluída.</b><small>A próxima do foco subiu. Isso entra na sua revisão da semana.</small></div><button class="btn" id="undo">Desfazer</button></div>';
+      $('#undo').onclick=()=>{st.state='pending'; st.qi=Math.max(0,st.qi-1); drawNow(); drawTray(); toast('Desfeito. Voltou como estava.');};
+    } else tray.innerHTML='<div class="resume">📍 <span><b>Onde parei:</b> testei a luz da janela para gravar. Falta o tripé.</span></div>';
+    return;
+  }
+  if(st.state==='accepted'){
+    const n=Object.keys(st.accepted).length;
+    tray.innerHTML='<div class="done-bar"><span class="ok">✓</span><div class="grow"><b>'+n+(n===1?' mudança entrou':' mudanças entraram')+' no mapa.</b><small>Revisão 38 · salvo agora. O Desfazer fica aqui até a próxima mudança.</small></div><button class="btn" id="undo">Desfazer</button></div>';
+    $('#undo').onclick=()=>{st.state='pending'; st.accepted={}; removeFollow(); drawMap(); drawTray(); toast('Desfeito. O mapa voltou como estava.');};
+    return;
+  }
+  if(st.state==='later'){
+    tray.innerHTML='<div class="done-bar"><span class="ok" style="background:var(--sunk);color:var(--muted)">…</span><div class="grow"><b>Guardado como pendente.</b><small>Continua tracejado até você decidir. Nada mudou no mapa.</small></div><button class="btn" id="back">Revisar</button></div>';
+    $('#back').onclick=()=>{st.state='pending';drawMap();drawTray();};
+    return;
+  }
+  const count=s.props.filter(p=>st.on[p.id]).length;
+  const rows=s.props.map(p=>{
+    if(s.triage){
+      const ar=A[st.area[p.id]];
+      const opts=Object.keys(A).map(k=>'<option value="'+k+'"'+(k===st.area[p.id]?' selected':'')+'>'+A[k].e+' '+esc(A[k].t)+'</option>').join('');
+      return '<label class="row"><input type="checkbox" data-p="'+p.id+'"'+(st.on[p.id]?' checked':'')+'><div><div class="rt">'+esc(p.t)+'</div><div class="rd"><span class="chip c-'+ar.c+'">'+ar.e+' '+esc(ar.t)+'</span>'+(p.u?'<span class="chip u">'+esc(p.u)+'</span>':'')+(st.guess[p.id]?'<span class="chip g">palpite</span>':'')+'mover para <select data-a="'+p.id+'" aria-label="Área de '+esc(p.t)+'">'+opts+'</select></div></div></label>';
+    }
+    return '<label class="row"><input type="checkbox" data-p="'+p.id+'"'+(st.on[p.id]?' checked':'')+'><div><div class="rt"><span class="chip c-iris">'+esc(p.kind)+'</span>'+esc(p.t)+' <em>'+esc(p.where)+'</em></div>'+(p.d?'<div class="rd">'+esc(p.d)+'</div>':'')+'</div></label>';
+  }).join('');
+  tray.innerHTML='<div class="tray-head"><b>'+(s.triage?'7 itens para guardar':'4 mudanças sugeridas')+'</b><span>Nada muda até você aceitar</span></div>'+
+   '<div class="tray-list">'+rows+'</div>'+
+   '<div class="tray-actions"><button class="btn primary" id="accept"'+(count?'':' disabled')+'>'+(count?'Aceitar '+count:'Nada marcado')+'</button><button class="btn ghost" id="later">Agora não</button></div>';
+  $$('input[data-p]',tray).forEach(cb=>cb.onchange=()=>{
+    st.on[cb.dataset.p]=cb.checked;
+    const p=s.props.find(x=>x.id===cb.dataset.p);
+    if(!s.triage&&p.creates&&!cb.checked) s.props.filter(x=>x.node===p.node).forEach(x=>st.on[x.id]=false);
+    if(!s.triage&&!p.creates&&cb.checked){const cr=s.props.find(x=>x.node===p.node&&x.creates); if(cr) st.on[cr.id]=true;}
+    drawMap(); drawTray();
+  });
+  $$('select[data-a]',tray).forEach(sel=>{sel.onchange=()=>{st.area[sel.dataset.a]=sel.value; st.guess[sel.dataset.a]=false; drawMap(); drawTray(); toast('Movido. O mapa acima já mostra.');};});
+  $('#accept').onclick=()=>{
+    st.accepted={}; st.touched={};
+    s.props.forEach(p=>{ if(st.on[p.id]){ st.accepted[p.id]=true; st.touched[s.triage?st.area[p.id]:p.node]=true; } });
+    st.state='accepted'; st.justAccepted=true; drawMap(); drawTray(); addFollow(s.followUp);
+  };
+  $('#later').onclick=()=>{st.state='later'; drawTray();};
+}
+
+function toast(t){const g=$('.gyp'); if(!g) return; const old=$('.toast',g); if(old) old.remove(); const el=document.createElement('div'); el.className='toast'; el.setAttribute('role','status'); el.textContent=t; g.appendChild(el); setTimeout(()=>el.remove(),2600);}
+
+function pick(key){cur=key; fresh(key); $$('.moment').forEach(m=>m.setAttribute('aria-pressed',m.dataset.s===key)); renderThread();}
+$$('.moment').forEach(m=>m.onclick=()=>pick(m.dataset.s));
+$('#narrowT').onchange=()=>renderWidget();
+
+/* ---------- Landing demo ---------- */
+const demo={i:0,paused:reduce,timer:null};
+const demoSteps=[
+ {msg:'',lbl:'Uma frase bagunçada…',mode:'base',btn:false},
+ {msg:'logo da padaria até sexta, bug no app, gravar a aula teste, pagar o DAS',lbl:'O assistente lê o seu mapa…',mode:'base',btn:false},
+ {msg:'logo da padaria até sexta, bug no app, gravar a aula teste, pagar o DAS',lbl:'4 propostas, cada uma na sua área.',mode:'prop',btn:true},
+ {msg:'logo da padaria até sexta, bug no app, gravar a aula teste, pagar o DAS',lbl:'Um toque.',mode:'prop',btn:true,press:true},
+ {msg:'logo da padaria até sexta, bug no app, gravar a aula teste, pagar o DAS',lbl:'✓ No mapa. Desfazer continua ali.',mode:'done',btn:false}
+];
+function demoRender(){
+  const step=demoSteps[demo.i], stage=$('#demoStage');
+  $('#demoMsg').textContent=step.msg||'…';
+  $('#demoLbl').textContent=step.lbl;
+  const b=$('#demoBtn'); b.style.visibility=step.btn?'visible':'hidden'; b.classList.toggle('pressed',!!step.press);
+  const keys=['curso','freela','app','grana','casa'];
+  $$('.node,.center',stage).forEach(x=>x.remove());
+  const W=stage.clientWidth||420,H=stage.clientHeight||250,cx=W/2,cy=H/2,rx=W/2-78,ry=H/2-34; let wires='';
+  const c=document.createElement('div'); c.className='center c-root'; c.style.cssText='left:'+cx+'px;top:'+cy+'px;width:96px;height:96px';
+  c.innerHTML='<span class="e">🗺️</span><b style="font-size:15px">Meu ano</b>'; stage.appendChild(c);
+  keys.forEach((k,i)=>{
+    const ang=-Math.PI/2+i*(2*Math.PI/keys.length), x=cx+rx*Math.cos(ang), y=cy+ry*Math.sin(ang);
+    const el=document.createElement('div'); el.className='node c-'+A[k].c+(step.mode==='done'&&k!=='casa'?' pop':''); el.style.cssText='left:'+x+'px;top:'+y+'px;min-width:110px';
+    const plus=step.mode==='prop'&&k!=='casa'?'<span class="plus">+1</span>':'';
+    el.innerHTML='<div class="t"><span>'+A[k].e+'</span><span>'+esc(A[k].t)+'</span></div>'+plus; stage.appendChild(el);
+    wires+='<line x1="'+cx+'" y1="'+cy+'" x2="'+x+'" y2="'+y+'" stroke="'+getComputedStyle(el).getPropertyValue('--a').trim()+'" stroke-opacity=".5" stroke-width="1.5"'+(step.mode==='prop'&&k!=='casa'?' stroke-dasharray="5 5"':'')+'/>';
+  });
+  $('svg.wires',stage).innerHTML=wires;
+}
+function demoTick(){ if(!demo.paused){ demo.i=(demo.i+1)%demoSteps.length; demoRender(); } }
+function demoStart(){ clearInterval(demo.timer); demo.timer=setInterval(demoTick,2200); }
+$('#demoPause').onclick=()=>{ demo.paused=!demo.paused; $('#demoPause').textContent=demo.paused?'▶ Continuar':'❚❚ Pausar'; $('#demoPause').setAttribute('aria-pressed',demo.paused); };
+if(reduce){ demo.i=4; $('#demoPause').textContent='▶ Continuar'; }
+
+/* Pricing */
+$$('[data-bill]').forEach(b=>b.onclick=()=>{
+  $$('[data-bill]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  const y=b.dataset.bill==='y';
+  $('#proPrice').innerHTML=y?'R$ 160<small>/ano</small>':'R$ 16<small>/mês</small>';
+  $('#proNote').textContent=y?'R$ 13,33 por mês, cobrado uma vez por ano':'ou R$ 160 por ano';
+});
+$$('[data-go]').forEach(b=>b.onclick=()=>$(b.dataset.go).scrollIntoView({behavior:reduce?'auto':'smooth'}));
+$$('[data-pay]').forEach(b=>b.onclick=()=>{
+  const f=b.dataset.pay==='fundador';
+  const yearly=$('[data-bill="y"]').getAttribute('aria-pressed')==='true';
+  $('#payTitle').textContent=f?'Obrigado por apostar cedo. Seu mapa não mudou, só perdeu o teto.':'Pronto. Seu mapa não mudou, só perdeu o teto.';
+  $('#payReceipt').innerHTML=f?'<div><span>Plano</span>Fundador · pagamento único</div><div><span>Valor</span>R$ 290,00</div><div><span>Próxima cobrança</span>Nenhuma</div>'
+    :'<div><span>Plano</span>Pro '+(yearly?'anual':'mensal')+'</div><div><span>Valor</span>'+(yearly?'R$ 160,00 por ano':'R$ 16,00 por mês')+'</div><div><span>Próxima cobrança</span>'+(yearly?'16/11/2027':'16/12/2026')+' · aviso 3 dias antes</div><div><span>Cancelar</span>Conta › Plano, um botão</div>';
+  $('#payModal').classList.add('on'); $('#payClose').focus();
+});
+['#payClose','#payClose2'].forEach(id=>$(id).onclick=()=>$('#payModal').classList.remove('on'));
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') $('#payModal').classList.remove('on'); });
+
+function layoutAll(){
+  if($('#v-chat').classList.contains('on')){ if(S[cur].view==='map') drawMap(); }
+  else demoRender();
+}
+let rt; window.addEventListener('resize',()=>{clearTimeout(rt); rt=setTimeout(layoutAll,120);});
+
+pick('proposta'); demoStart();
+})();
+</script>
+</body>
+</html>

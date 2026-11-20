@@ -12,3 +12,7 @@ debug.log
 .env
 .env.*
 !.env.example
+
+# Runtime do agente AGY (logs e estado); a pesquisa em .agy-staff/*.md é versionada
+.agy-staff/jobs/
+.agy-staff/state.json
