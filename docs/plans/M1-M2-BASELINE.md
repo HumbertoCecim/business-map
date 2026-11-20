@@ -43,6 +43,42 @@ O Paseo 0.16.1 rejeita o pacote 0.5.0 por causa da faixa de versão do manifest.
 
 **Decisão:** fazer uma **fatia exclusiva de compatibilidade 0.16.x** antes de M3. Ela inclui: SDK 0.16.1 em `devDependencies`, faixa do manifest `>=0.16.1 <0.17.0` (ou `>=0.15.4 <0.17.0` se quisermos manter 0.15), a correção do fixture `PluginHookAgent`, typecheck/test/build e inspeção visual do plugin no app. Não é atualização geral, e o pacote instalado em `AppData` não é trocado sem sua confirmação. A 0.17.0 está em beta; ainda não é alvo.
 
+### Resultado da fatia de compatibilidade (20/11)
+
+Consulta prévia ao Claude Opus 5.5 (perfil `Claude - Advisor`): manter pinos exatos, corrigir somente o fixture e evitar migrações ou mudanças de produção nesta fatia. A branch `feat/plugin-mvp` nasceu de `origin/main` em `3b7c207d601f09aa25087c6852ca61b07dc0b9c4`. Antes do checkout, as 13 cópias não rastreadas presentes na main foram conferidas com `git hash-object` contra os blobs de `origin/main`; somente essas cópias idênticas foram removidas. Os arquivos extras foram preservados. A branch `feat/ui-01` permaneceu em `8aac5e3`; sua PR não foi alterada.
+
+- `@getpaseo/plugin`, `@getpaseo/client` e `@getpaseo/protocol`: **0.16.1**, com pinos exatos. O lockfile mudou somente os pacotes `@getpaseo/*`, incluindo o transitivo `relay`.
+- Manifest: **`>=0.16.1 <0.17.0`**. Não mantemos a promessa de compatibilidade com 0.15.4 sem validar esse runtime com o novo SDK. A faixa inclui os patches 0.16.x e exclui 0.17.
+- Fixture `PluginHookAgent`: `background: false` e `metadata: {}`, conforme o contrato publicado em `@getpaseo/plugin@0.16.1`.
+- Revisão das APIs usadas: os registros de painéis, Command Center, `openPanel`, `server.addHook("agent.open.before", ...)` e chamadas do SDK continuam disponíveis. O typecheck de produção e client passou sem outras adaptações. Nenhuma alteração em código de produção, schema, M3 ou UI.
+
+Checks executados pelo PowerShell sobre `3b7c207` com o diff de compatibilidade (`dirty=true`):
+
+| Comando | Resultado |
+|---|---|
+| `npm ci` | Passou; 436 pacotes instalados, 0 vulnerabilidades reportadas |
+| `npm run typecheck` | Passou; os dois projetos TypeScript sem erros |
+| `npm test` | Passou: **125/125**, 0 falhas |
+| `npm run build` | Passou; avisos de `"use client"` do lucide-react já observados na baseline |
+
+Logs locais: `.local/compat-016/{npm-ci,typecheck,test-powershell,build}.log`. Esses arquivos são ignorados pelo Git. O workpad do card registra os commits e as execuções posteriores.
+
+**Prova do servidor:** a instalação local do Paseo foi atualizada desde a baseline e agora é **0.16.2** (app/CLI e daemon principal). O teste novo usou esse runtime 0.16.x, com os SDKs em 0.16.1; não foi uma nova execução no daemon 0.16.1. Instância isolada iniciada com `paseo daemon run --home .local/compat-016/paseo-home`, `daemon.listen: 127.0.0.1:6798`, relay desligado e plugins habilitados somente nesse home. Instalação por diretório:
+
+```powershell
+paseo plugin install 'C:\Users\Humbe\Documents\PluginBusinessCanvas\mvp' --home .local/compat-016/paseo-home --json
+paseo plugin ls --home .local/compat-016/paseo-home --json
+paseo plugin logs business-model-board --home .local/compat-016/paseo-home
+```
+
+Resultado: **`running`**, sem erro de carregamento; log **`[paseo] Plugin ready`** em `2026-11-20T23:55:33.798Z`. Evidências em `.local/compat-016/{plugin-ls,plugin-logs,daemon-stdout,daemon-stderr}.log`.
+
+**Validação visual: pendente de inspeção no app.** O daemon isolado fica ligado para esta etapa. No Paseo, abrir **Settings → Add host → Direct connection**, Host `127.0.0.1`, Port `6798`, SSL desligado. Selecionar esse host, o projeto `visual-check`, o workspace **Compatibilidade 0.16 — teste visual**, e **Ctrl+K → Abrir Business Harness**. A raiz fictícia é `.local/compat-016/visual-check`, sem mapas reais. Conferir as quatro combinações: janela larga/claro, larga/escuro, compacta/claro e compacta/escuro; exigir tela renderizada, texto legível, controles acessíveis e ausência de erro de carregamento do bundle. Não confundir `Plugin ready` do servidor com aprovação visual do client. Referência de conexão: [documentação oficial](https://paseo.sh/docs/connectivity).
+
+Para encerrar somente o teste: `paseo daemon stop --home .local/compat-016/paseo-home`. Para retomar, a partir da raiz do repositório: `paseo daemon run --home .local/compat-016/paseo-home`. O home conserva a instalação e o workspace.
+
+**Instalação principal: não alterada.** Antes de qualquer troca, terminar a prova visual e obter confirmação explícita. O release `%LOCALAPPDATA%\BusinessMap\releases\0.5.0` é um diretório npm; o manifest atual fica em `node_modules/business-map/paseo-plugin.json`, ainda com a faixa 0.15. A futura troca deve preservar uma cópia integral do release anterior e o caminho de instalação registrado, instalar o novo pacote somente após autorização e recarregar apenas `business-model-board`. Se falhar, restaurar o release/pasta anterior e o registro original, depois executar `paseo plugin reload business-model-board` e conferir os logs. Isso retorna ao estado anterior, que já falhava por incompatibilidade; não promete tornar a versão antiga compatível com 0.16. Não reiniciar o daemon principal. Nenhum push ou PR nesta fatia sem nova autorização.
+
 ## 4. M2 — prova do túnel
 
 ### Pronto e verificado localmente
@@ -143,7 +179,7 @@ Estados globais: sem serviço / iniciando / precisa parear / conectado / incompa
 
 Pendências que seguem para as próximas frentes:
 
-1. **Fatia de compatibilidade Paseo 0.16.x** (decisão da seção 3). Hoje o plugin instalado não carrega no Paseo do usuário. Ela vem antes ou no começo do M3.
+1. **Fatia de compatibilidade Paseo 0.16.x** (seção 3): SDK, fixture, checks e servidor isolado aprovados. Falta a inspeção visual no app; o pacote principal continua sem alteração, aguardando essa prova e confirmação explícita. Ela vem antes do M3.
 2. **M3:** schema v4, congelamento do contrato v3 usado pelo `cloud/` e migração protegida (PLUGIN-MVP.md §M3).
 3. **M4:** serviço parado depois de suspensão do PC deve aparecer como indisponível e ser recuperável, incluindo `service.owner.json` órfão.
 4. **M7:** perfil remoto restrito, aspas no `--mcp-command`, estado do túnel separado (429 ≠ "sem dados"), investigação do 409 recorrente no primeiro `tools/call`.
