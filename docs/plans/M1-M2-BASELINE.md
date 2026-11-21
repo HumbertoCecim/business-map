@@ -75,7 +75,25 @@ Resultado: **`running`**, sem erro de carregamento; log **`[paseo] Plugin ready`
 
 **Validação visual: pendente de inspeção no app.** O daemon isolado fica ligado para esta etapa. No Paseo, abrir **Settings → Add host → Direct connection**, Host `127.0.0.1`, Port `6798`, SSL desligado. Selecionar esse host, o projeto `visual-check`, o workspace **Compatibilidade 0.16 — teste visual**, e **Ctrl+K → Abrir Business Harness**. A raiz fictícia é `.local/compat-016/visual-check`, sem mapas reais. Conferir as quatro combinações: janela larga/claro, larga/escuro, compacta/claro e compacta/escuro; exigir tela renderizada, texto legível, controles acessíveis e ausência de erro de carregamento do bundle. Não confundir `Plugin ready` do servidor com aprovação visual do client. Referência de conexão: [documentação oficial](https://paseo.sh/docs/connectivity).
 
-Para encerrar somente o teste: `paseo daemon stop --home .local/compat-016/paseo-home`. Para retomar, a partir da raiz do repositório: `paseo daemon run --home .local/compat-016/paseo-home`. O home conserva a instalação e o workspace.
+**Acompanhamento da navegação (20/11):** o host já estava conectado. O workspace aparece no fim da barra lateral, no projeto **visual-check**. Clique em **Compatibilidade 0.16 — teste visual**; na tela **Nova aba**, escolha **Business Harness**, sem o sufixo “aba anterior”. Esse caminho foi confirmado no app e dispensa Ctrl+K.
+
+Na primeira abertura, o bundle renderizou corretamente o erro de serviço indisponível: faltava iniciar o serviço fictício. O serviço foi iniciado com `BUSINESS_MAP_HOME` isolado, e somente o daemon de teste foi reiniciado com o mesmo ambiente. Depois disso, o painel carregou no app em **desktop/tema escuro**, sem o erro anterior. O formulário **Conectar ao Business Map** é esperado para autorizar gravações. As outras três combinações visuais continuam pendentes; essa observação não conclui a matriz.
+
+Para retomar o ambiente, use dois terminais PowerShell na raiz do repositório. No primeiro, inicie o serviço sem abrir o visualizador; não compartilhe a URL com código temporário que o comando imprime:
+
+```powershell
+$env:BUSINESS_MAP_HOME = Join-Path $PWD '.local/compat-016/bm-home'
+node build/cli.mjs open --root .local/compat-016/visual-check --no-browser
+```
+
+No segundo, defina o mesmo ambiente antes de iniciar o daemon:
+
+```powershell
+$env:BUSINESS_MAP_HOME = Join-Path $PWD '.local/compat-016/bm-home'
+paseo daemon run --home .local/compat-016/paseo-home
+```
+
+O home conserva a instalação e o workspace. Para encerrar apenas os componentes fictícios: `paseo daemon stop --home .local/compat-016/paseo-home` e, com o mesmo `BUSINESS_MAP_HOME`, `node build/cli.mjs stop --root .local/compat-016/visual-check`. O script local ignorado `.local/compat-016/run-daemon.ps1` também define esse ambiente.
 
 **Instalação principal: não alterada.** Antes de qualquer troca, terminar a prova visual e obter confirmação explícita. O release `%LOCALAPPDATA%\BusinessMap\releases\0.5.0` é um diretório npm; o manifest atual fica em `node_modules/business-map/paseo-plugin.json`, ainda com a faixa 0.15. A futura troca deve preservar uma cópia integral do release anterior e o caminho de instalação registrado, instalar o novo pacote somente após autorização e recarregar apenas `business-model-board`. Se falhar, restaurar o release/pasta anterior e o registro original, depois executar `paseo plugin reload business-model-board` e conferir os logs. Isso retorna ao estado anterior, que já falhava por incompatibilidade; não promete tornar a versão antiga compatível com 0.16. Não reiniciar o daemon principal. Nenhum push ou PR nesta fatia sem nova autorização.
 
