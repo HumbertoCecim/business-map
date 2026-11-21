@@ -43,6 +43,75 @@ O Paseo 0.16.1 rejeita o pacote 0.5.0 por causa da faixa de versão do manifest.
 
 **Decisão:** fazer uma **fatia exclusiva de compatibilidade 0.16.x** antes de M3. Ela inclui: SDK 0.16.1 em `devDependencies`, faixa do manifest `>=0.16.1 <0.17.0` (ou `>=0.15.4 <0.17.0` se quisermos manter 0.15), a correção do fixture `PluginHookAgent`, typecheck/test/build e inspeção visual do plugin no app. Não é atualização geral, e o pacote instalado em `AppData` não é trocado sem sua confirmação. A 0.17.0 está em beta; ainda não é alvo.
 
+### Resultado da fatia de compatibilidade (20/11)
+
+Consulta prévia ao Claude Opus 5.5 (perfil `Claude - Advisor`): manter pinos exatos, corrigir somente o fixture e evitar migrações ou mudanças de produção nesta fatia. A branch `feat/plugin-mvp` nasceu de `origin/main` em `3b7c207d601f09aa25087c6852ca61b07dc0b9c4`. Antes do checkout, as 13 cópias não rastreadas presentes na main foram conferidas com `git hash-object` contra os blobs de `origin/main`; somente essas cópias idênticas foram removidas. Os arquivos extras foram preservados. A branch `feat/ui-01` permaneceu em `8aac5e3`; sua PR não foi alterada.
+
+- `@getpaseo/plugin`, `@getpaseo/client` e `@getpaseo/protocol`: **0.16.1**, com pinos exatos. O lockfile mudou somente os pacotes `@getpaseo/*`, incluindo o transitivo `relay`.
+- Manifest: **`>=0.16.1 <0.17.0`**. Não mantemos a promessa de compatibilidade com 0.15.4 sem validar esse runtime com o novo SDK. A faixa inclui os patches 0.16.x e exclui 0.17.
+- Fixture `PluginHookAgent`: `background: false` e `metadata: {}`, conforme o contrato publicado em `@getpaseo/plugin@0.16.1`.
+- Revisão das APIs usadas: os registros de painéis, Command Center, `openPanel`, `server.addHook("agent.open.before", ...)` e chamadas do SDK continuam disponíveis. O typecheck de produção e client passou sem outras adaptações. Nenhuma alteração em código de produção, schema, M3 ou UI.
+
+Checks executados pelo PowerShell sobre `3b7c207` com o diff de compatibilidade (`dirty=true`):
+
+| Comando | Resultado |
+|---|---|
+| `npm ci` | Passou; 436 pacotes instalados, 0 vulnerabilidades reportadas |
+| `npm run typecheck` | Passou; os dois projetos TypeScript sem erros |
+| `npm test` | Passou: **125/125**, 0 falhas |
+| `npm run build` | Passou; avisos de `"use client"` do lucide-react já observados na baseline |
+
+Logs locais: `.local/compat-016/{npm-ci,typecheck,test-powershell,build}.log`. Esses arquivos são ignorados pelo Git. O workpad do card registra os commits e as execuções posteriores.
+
+**Prova do servidor:** a instalação local do Paseo foi atualizada desde a baseline e agora é **0.16.2** (app/CLI e daemon principal). O teste novo usou esse runtime 0.16.x, com os SDKs em 0.16.1; não foi uma nova execução no daemon 0.16.1. Instância isolada iniciada com `paseo daemon run --home .local/compat-016/paseo-home`, `daemon.listen: 127.0.0.1:6798`, relay desligado e plugins habilitados somente nesse home. Instalação por diretório:
+
+```powershell
+paseo plugin install 'C:\Users\Humbe\Documents\PluginBusinessCanvas\mvp' --home .local/compat-016/paseo-home --json
+paseo plugin ls --home .local/compat-016/paseo-home --json
+paseo plugin logs business-model-board --home .local/compat-016/paseo-home
+```
+
+Resultado: **`running`**, sem erro de carregamento; log **`[paseo] Plugin ready`** em `2026-11-20T23:55:33.798Z`. Evidências em `.local/compat-016/{plugin-ls,plugin-logs,daemon-stdout,daemon-stderr}.log`.
+
+**Validação visual: aprovada pelo usuário nas quatro combinações (20/11).** O daemon isolado fica ligado para esta etapa. No Paseo, abrir **Settings → Add host → Direct connection**, Host `127.0.0.1`, Port `6798`, SSL desligado. Selecionar esse host, o projeto `visual-check`, o workspace **Compatibilidade 0.16 — teste visual**, e **Ctrl+K → Abrir Business Harness**. A raiz fictícia é `.local/compat-016/visual-check`, sem mapas reais. Conferir as quatro combinações: janela larga/claro, larga/escuro, compacta/claro e compacta/escuro; exigir tela renderizada, texto legível, controles acessíveis e ausência de erro de carregamento do bundle. Não confundir `Plugin ready` do servidor com aprovação visual do client. Referência de conexão: [documentação oficial](https://paseo.sh/docs/connectivity).
+
+**Acompanhamento da navegação (20/11):** o host já estava conectado. O workspace aparece no fim da barra lateral, no projeto **visual-check**. Clique em **Compatibilidade 0.16 — teste visual**; na tela **Nova aba**, escolha **Business Harness**, sem o sufixo “aba anterior”. Esse caminho foi confirmado no app e dispensa Ctrl+K.
+
+Na primeira abertura, o bundle renderizou corretamente o erro de serviço indisponível: faltava iniciar o serviço fictício. O serviço foi iniciado com `BUSINESS_MAP_HOME` isolado, e somente o daemon de teste foi reiniciado com o mesmo ambiente. Depois disso, o painel carregou no app em **desktop/tema escuro**, sem o erro anterior. O formulário **Conectar ao Business Map** é esperado para autorizar gravações. Depois dessa observação, o usuário confirmou explicitamente: “Sim, as quatro combinações funcionaram”. Matriz aprovada: desktop/claro, desktop/escuro, compacto/claro e compacto/escuro. Essa confirmação cobre renderização visual; não significa autorização para atualizar a instalação principal.
+
+Para retomar o ambiente, use dois terminais PowerShell na raiz do repositório. No primeiro, inicie o serviço sem abrir o visualizador; não compartilhe a URL com código temporário que o comando imprime:
+
+```powershell
+$env:BUSINESS_MAP_HOME = Join-Path $PWD '.local/compat-016/bm-home'
+node build/cli.mjs open --root .local/compat-016/visual-check --no-browser
+```
+
+No segundo, defina o mesmo ambiente antes de iniciar o daemon:
+
+```powershell
+$env:BUSINESS_MAP_HOME = Join-Path $PWD '.local/compat-016/bm-home'
+paseo daemon run --home .local/compat-016/paseo-home
+```
+
+O home conserva a instalação e o workspace. Para encerrar apenas os componentes fictícios: `paseo daemon stop --home .local/compat-016/paseo-home` e, com o mesmo `BUSINESS_MAP_HOME`, `node build/cli.mjs stop --root .local/compat-016/visual-check`. O script local ignorado `.local/compat-016/run-daemon.ps1` também define esse ambiente.
+
+**Instalação principal: atualizada com autorização explícita em 21/11.** Após aprovar as quatro combinações visuais, o usuário autorizou “Atualizar com rollback”. O pacote testado de `f694478` foi copiado para `%LOCALAPPDATA%\BusinessMap\releases\0.5.0-paseo016-f694478`; o registro de `business-model-board` passou a apontar para `node_modules/business-map` nessa pasta. O release `0.5.0` ficou intacto. Backup integral em `.local/compat-016/backup-main-0.5.0`, conferido anteriormente por SHA-256 nos 3.779 arquivos; o manifest antigo permaneceu idêntico ao backup depois da troca.
+
+Resultado no daemon principal **0.16.2**, `127.0.0.1:6767`: **`running`**, com **`[paseo] Plugin ready`** em `2026-11-21T14:05:46.573Z`. O daemon manteve PID `23756` e `startedAt` `2026-11-20T16:53:37.357Z`; nenhum reinício. Os demais plugins conservaram ID, caminho, estado e enabled. Evidências locais: `.local/compat-016/main-{plugins-after.json,plugin-logs.log,daemon-before.json,daemon-after.json}`. Nenhum push ou PR foi feito.
+
+A primeira tentativa de registro foi interrompida porque `$ErrorActionPreference = 'Stop'` tratou o aviso normal de confiança da CLI em stderr como erro fatal (`NativeCommandError`). O catálogo foi inspecionado antes de retomar; a instalação foi repetida usando o código de saída da CLI e terminou com sucesso. Nenhum dado de negócio foi alterado. O rollback não precisou ser aplicado após a instalação bem-sucedida.
+
+Se for necessário voltar atrás, remova apenas o registro novo e reinstale o diretório antigo (não apagar nenhuma pasta):
+
+```powershell
+$oldPlugin = Join-Path $env:LOCALAPPDATA 'BusinessMap\releases\0.5.0\node_modules\business-map'
+paseo plugin remove business-model-board --host 127.0.0.1:6767 --json
+paseo plugin install $oldPlugin --host 127.0.0.1:6767 --json
+paseo plugin ls --host 127.0.0.1:6767 --json
+```
+
+A CLI não substitui uma origem já registrada com o mesmo ID; por isso o rollback remove o registro antes de reinstalar. Isso restaura o estado anterior, que já falhava pela faixa 0.15; não torna o pacote antigo compatível com 0.16. Não reiniciar o daemon principal.
+
 ## 4. M2 — prova do túnel
 
 ### Pronto e verificado localmente
@@ -143,10 +212,27 @@ Estados globais: sem serviço / iniciando / precisa parear / conectado / incompa
 
 Pendências que seguem para as próximas frentes:
 
-1. **Fatia de compatibilidade Paseo 0.16.x** (decisão da seção 3). Hoje o plugin instalado não carrega no Paseo do usuário. Ela vem antes ou no começo do M3.
+1. **Fatia de compatibilidade Paseo 0.16.x** (seção 3): SDK, fixture, checks e servidor isolado aprovados. Inspeção visual aprovada pelo usuário nas quatro combinações e atualização principal autorizada concluída em 21/11, com running/Plugin ready e rollback preservado. Fatia concluída antes do M3.
 2. **M3:** schema v4, congelamento do contrato v3 usado pelo `cloud/` e migração protegida (PLUGIN-MVP.md §M3).
 3. **M4:** serviço parado depois de suspensão do PC deve aparecer como indisponível e ser recuperável, incluindo `service.owner.json` órfão.
 4. **M7:** perfil remoto restrito, aspas no `--mcp-command`, estado do túnel separado (429 ≠ "sem dados"), investigação do 409 recorrente no primeiro `tools/call`.
 5. Ideias abertas no card: `whoami.exe`/`icacls.exe` por caminho absoluto, investigação do 409, prova de widget visual (MCP App) no ChatGPT.
 
 **Base para a próxima etapa:** a `main` (com estes documentos). A branch `feat/ui-01` (PR #2, draft) só altera a UI do `cloud/` e não toca `shared/`, `server/`, `local/` nem `web/`. Por isso o MVP do plugin pode nascer da `main` sem integrar a UI-01 sem querer.
+
+## 8. Entrega para revisão e próximos passos gerais (21/11)
+
+O usuário autorizou o push e a abertura da [PR #3 — compatibilidade Paseo 0.16.x](https://github.com/HumbertoCecim/business-map/pull/3), de `feat/plugin-mvp` para `main`. Os registros anteriores de “sem push/PR” descrevem o estado na etapa de instalação, antes dessa autorização. A PR UI-01 (#2) permanece independente e sem alteração. Nenhum merge foi executado nesta entrega.
+
+O Claude Opus 5.5 foi consultado antes da publicação: recomendou preservar o diff mínimo, usar refspec explícito no push e manter os checks vinculados ao código realmente validado. O pacote instalado no principal continua sendo o artefato de `f694478`; os commits seguintes alteram somente esta documentação. O diff fora de `docs/` desde `8959574` deve continuar vazio. A segunda revisão do Opus será registrada no corpo da PR, sem representar um review formal de outro usuário do GitHub.
+
+Sequência recomendada, como orientação de trabalho futuro e não implementação desta PR:
+
+1. **Revisar e integrar a compatibilidade.** Avaliar a PR #3 e seu CI; somente após o merge criar a próxima branch da `main` atualizada. O workflow Cloud também é acionado por `package.json`/lockfile e deve ser acompanhado; ele não substitui os checks raiz já executados no PowerShell.
+2. **M3 — proteger a fronteira de dados antes da expansão.** Primeira fatia: congelar o contrato v3 e as dependências consumidas pelo `cloud/`, trocar os imports e comprovar regressão Cloud sem mudança de comportamento. Incluir a prova de que o writer antigo recusa uma fixture v4 sem regravar nada. Depois evoluir o modelo local e a migração explícita com backup v3 e teste de recuperação. Não misturar UI nova. Comandos Cloud definidos no plano: `npx --yes pnpm@10.33.1 --dir cloud typecheck`, `npx --yes pnpm@10.33.1 --dir cloud test` e `npx --yes pnpm@10.33.1 --dir cloud build`.
+3. **M4 — reduzir o atrito já observado.** Iniciar/reutilizar serviço, abrir pareamento e recuperar serviço parado após suspensão, incluindo `service.owner.json` órfão. Preservar escritor único e sessão humana em memória; não reiniciar o daemon. É independente do schema de M3 e pode avançar como frente separada, sem ampliar esta PR.
+4. **M5 e M6 — construir o uso local sobre a base estável.** M5 depende de M3/M4: ideias, sessões e revisão humana com mapa existente preservado. M6 vem após o modelo e o shell de M5: catálogo fechado de indicador, lista e nota, sem app builder universal.
+5. **M7 — tornar a prova remota apropriada ao produto.** Após M2/M3/M4, introduzir grant por empresa, leitura/proposta restritas e revogação; incorporar aspas Windows, diagnóstico do 409 e distinção entre túnel offline/429 e ausência de dados. Repetir a chamada no ChatGPT real após migrar a fixture.
+6. **M8 — fechar aceite e distribuição.** Consolidar instalação reproduzível, diagnóstico, restauração e documentação. Definir versão distinta para o próximo pacote distribuído (por exemplo `0.5.1`, ainda não decidido): o release antigo e o artefato desta fatia mantêm `0.5.0`, mas têm manifests diferentes. O SHA e o caminho identificam o artefato testado; não trocar sua versão retroativamente.
+
+O plano completo e seus critérios permanecem em [PLUGIN-MVP.md](PLUGIN-MVP.md). Nenhuma frente M3–M8 foi iniciada por esta entrega. O ambiente fictício pode ser encerrado pelos comandos da seção 3 quando não for mais necessário; o release antigo e o backup devem permanecer disponíveis enquanto o rollback for útil.

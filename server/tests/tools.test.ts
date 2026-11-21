@@ -112,6 +112,8 @@ async function harness(t: { after: (fn: () => Promise<void>) => void }) {
       id,
       workspaceId: "workspace",
       parentAgentId: null,
+      background: false,
+      metadata: {},
       provider: "codex",
       cwd: root,
       title: "Existing",
