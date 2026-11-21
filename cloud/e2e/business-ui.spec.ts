@@ -3,6 +3,11 @@ import { reduceBoard, emptyBoard } from '../../shared/model';
 import type { Snapshot, ProposalPreview } from '../src/features/business/api';
 import { WIDGET_VERSION } from '../widget/sizing';
 
+// Keep the existing Portuguese regression scenarios; UI-01 covers the English default.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('business-cloud.language', 'pt-BR'));
+});
+
 function fixture(): Snapshot {
   const board = emptyBoard('synthetic-ui-board'); board.title = 'Ateliê de teste'; board.revision = 1;
   board.sections = [{ id: 'area-test', title: 'Clientes', questions: 'Quem queremos atender?', cards: [{ id: 'card-test', title: 'Receita recorrente', text: 'Hipótese sintética para o teste.', firstStep: 'Conversar com cinco pessoas', lane: 'later', done: false, important: false, urgent: false }] }];
@@ -83,7 +88,7 @@ test('mobile keeps navigation, search, theme and external connection guidance us
   await expect(page.locator('.business-cloud.studio')).toHaveAttribute('data-theme', 'dark');
   await page.getByRole('combobox', { name: 'Escolher área' }).selectOption('area-test');
   await page.getByRole('combobox', { name: 'Escolher área' }).selectOption('area-test');
-  await expect(page.locator('.map-card>p').first()).toHaveCSS('color', 'rgb(150, 158, 144)');
+  await expect(page.locator('.map-card>p').first()).toHaveCSS('color', 'rgb(173, 182, 167)');
   await page.locator('.cloud-mobile-tools').getByRole('button', { name: 'ChatGPT' }).click();
   await expect(page.getByRole('dialog', { name: 'Conectar ChatGPT' })).toBeVisible();
   await expect(page.getByText('Copiar o endereço não instala nem conecta o app automaticamente.', { exact: false })).toBeVisible();

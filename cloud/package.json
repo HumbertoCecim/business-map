@@ -27,7 +27,7 @@
     "test:business": "vitest run --config vitest.business.config.ts",
     "test:pilot": "vitest run --config vitest.pilot.config.ts",
     "test:mcp": "vitest run --config vitest.mcp.config.ts",
-    "test:widget": "vitest run --project node src/features/business/widget-transport.node.test.ts",
+    "test:widget": "vitest run --project node src/features/business/widget-transport.node.test.ts src/features/business/map-presentation.node.test.ts",
     "test:ui": "playwright test --config widget/playwright.config.ts"
   },
   "dependencies": {

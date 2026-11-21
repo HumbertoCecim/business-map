@@ -1,4 +1,5 @@
 import type { Board } from '../../../business/model';
+import { useUiLanguage, useUiText } from '../ui-text';
 
 const labels: Record<string, string> = {
   title: 'Nome do negócio', sections: 'Áreas do negócio', cards: 'Notas', questions: 'Perguntas e contexto',
@@ -27,27 +28,32 @@ function reference(value: string, board: Board) {
     || board.memories.find(item => item.id === value)?.text
     || value;
 }
-function friendlyText(value: string, field: string) {
-  if (field === 'lane') return { now: 'Agora', later: 'Depois' }[value] || value;
-  if (field === 'kind') return { context: 'Contexto', decision: 'Decisão', founder_statement: 'Relato do fundador', github_issue: 'Registro de problema', log_excerpt: 'Trecho de registro', url: 'Link', note: 'Nota', board: 'Negócio', section: 'Área', card: 'Nota' }[value] || value;
-  if (field === 'status') return { pending: 'Em revisão', applied: 'Confirmada', rejected: 'Rejeitada', active: 'Em andamento', closed: 'Encerrada', closing: 'Em encerramento' }[value] || value;
-  if (['createdAt', 'startedAt', 'closedAt'].includes(field) && !Number.isNaN(Date.parse(value))) return new Date(value).toLocaleString('pt-BR');
+function friendlyText(value: string, field: string, t: (text: string) => string, language: string) {
+  const enums: Record<string, Record<string, string>> = {
+    lane: { now: 'Agora', later: 'Depois' },
+    kind: { context: 'Contexto', decision: 'Decisão', founder_statement: 'Relato do fundador', github_issue: 'Registro de problema', log_excerpt: 'Trecho de registro', url: 'Link', note: 'Nota', board: 'Negócio', section: 'Área', card: 'Nota' },
+    status: { pending: 'Em revisão', applied: 'Confirmada', rejected: 'Rejeitada', active: 'Em andamento', closed: 'Encerrada', closing: 'Em encerramento' },
+  };
+  const label = enums[field]?.[value];
+  if (label) return t(label);
+  if (['createdAt', 'startedAt', 'closedAt'].includes(field) && !Number.isNaN(Date.parse(value))) return new Date(value).toLocaleString(language);
   return value;
 }
 /** Human-readable presentation of canonical server values. Exact data remains in technical details. */
 export function CanonicalValue({ value, board, field = '' }: { value: unknown; board: Board; field?: string }) {
-  if (field === 'parentId' && (value === undefined || value === null || value === '')) return <p className="canonical-text">{board.title} · visão da empresa</p>;
-  if (value === undefined || value === null || value === '') return <p className="canonical-empty">Não preenchido</p>;
-  if (typeof value === 'boolean') return <p className="canonical-text">{value ? 'Sim' : 'Não'}</p>;
+  const t = useUiText(), language = useUiLanguage();
+  if (field === 'parentId' && (value === undefined || value === null || value === '')) return <p className="canonical-text">{board.title} {t('· visão da empresa')}</p>;
+  if (value === undefined || value === null || value === '') return <p className="canonical-empty">{t('Não preenchido')}</p>;
+  if (typeof value === 'boolean') return <p className="canonical-text">{t(value ? 'Sim' : 'Não')}</p>;
   if (typeof value === 'number') return <p className="canonical-text">{value}</p>;
-  if (typeof value === 'string') return <p className="canonical-text">{references.has(field) ? reference(value, board) : friendlyText(value, field)}</p>;
-  if (Array.isArray(value)) return value.length ? <div className="canonical-items">{value.map((item, index) => <div className="canonical-item" key={item && typeof item === 'object' && 'id' in item ? String(item.id) : index}><CanonicalValue value={item} board={board} field={field}/></div>)}</div> : <p className="canonical-empty">Nenhum item</p>;
+  if (typeof value === 'string') return <p className="canonical-text">{references.has(field) ? reference(value, board) : friendlyText(value, field, t, language)}</p>;
+  if (Array.isArray(value)) return value.length ? <div className="canonical-items">{value.map((item, index) => <div className="canonical-item" key={item && typeof item === 'object' && 'id' in item ? String(item.id) : index}><CanonicalValue value={item} board={board} field={field}/></div>)}</div> : <p className="canonical-empty">{t('Nenhum item')}</p>;
   if (typeof value === 'object') {
     const record = value as Record<string, unknown>;
     if (typeof record.id === 'string' && ['board', 'section', 'card'].includes(String(record.kind))) return <p className="canonical-text">{reference(record.id, board)}</p>;
     const titleKey = typeof record.title === 'string' ? 'title' : typeof record.label === 'string' ? 'label' : typeof record.name === 'string' ? 'name' : '';
     const entries = Object.entries(record).filter(([key]) => !technicalFields.has(key) && key !== titleKey);
-    return <div className="canonical-record">{titleKey && <h4>{String(record[titleKey]) || 'Sem nome'}</h4>}<dl>{entries.map(([key, item]) => <div className="canonical-field" key={key}><dt>{key === 'title' ? 'Título' : canonicalLabel(key)}</dt><dd><CanonicalValue value={item} board={board} field={key}/></dd></div>)}</dl>{!titleKey && !entries.length && <p className="canonical-empty">Informações de identificação disponíveis nos detalhes técnicos.</p>}</div>;
+    return <div className="canonical-record">{titleKey && <h4>{String(record[titleKey]) || t('Sem nome')}</h4>}<dl>{entries.map(([key, item]) => <div className="canonical-field" key={key}><dt>{t(key === 'title' ? 'Título' : canonicalLabel(key))}</dt><dd><CanonicalValue value={item} board={board} field={key}/></dd></div>)}</dl>{!titleKey && !entries.length && <p className="canonical-empty">{t('Informações de identificação disponíveis nos detalhes técnicos.')}</p>}</div>;
   }
   return <p className="canonical-text">{String(value)}</p>;
 }
