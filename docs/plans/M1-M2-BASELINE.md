@@ -95,7 +95,22 @@ paseo daemon run --home .local/compat-016/paseo-home
 
 O home conserva a instalação e o workspace. Para encerrar apenas os componentes fictícios: `paseo daemon stop --home .local/compat-016/paseo-home` e, com o mesmo `BUSINESS_MAP_HOME`, `node build/cli.mjs stop --root .local/compat-016/visual-check`. O script local ignorado `.local/compat-016/run-daemon.ps1` também define esse ambiente.
 
-**Instalação principal: não alterada.** Antes de qualquer troca, terminar a prova visual e obter confirmação explícita. O release `%LOCALAPPDATA%\BusinessMap\releases\0.5.0` é um diretório npm; o manifest atual fica em `node_modules/business-map/paseo-plugin.json`, ainda com a faixa 0.15. A futura troca deve preservar uma cópia integral do release anterior e o caminho de instalação registrado, instalar o novo pacote somente após autorização e recarregar apenas `business-model-board`. Se falhar, restaurar o release/pasta anterior e o registro original, depois executar `paseo plugin reload business-model-board` e conferir os logs. Isso retorna ao estado anterior, que já falhava por incompatibilidade; não promete tornar a versão antiga compatível com 0.16. Não reiniciar o daemon principal. Nenhum push ou PR nesta fatia sem nova autorização.
+**Instalação principal: atualizada com autorização explícita em 21/11.** Após aprovar as quatro combinações visuais, o usuário autorizou “Atualizar com rollback”. O pacote testado de `f694478` foi copiado para `%LOCALAPPDATA%\BusinessMap\releases\0.5.0-paseo016-f694478`; o registro de `business-model-board` passou a apontar para `node_modules/business-map` nessa pasta. O release `0.5.0` ficou intacto. Backup integral em `.local/compat-016/backup-main-0.5.0`, conferido anteriormente por SHA-256 nos 3.779 arquivos; o manifest antigo permaneceu idêntico ao backup depois da troca.
+
+Resultado no daemon principal **0.16.2**, `127.0.0.1:6767`: **`running`**, com **`[paseo] Plugin ready`** em `2026-11-21T14:05:46.573Z`. O daemon manteve PID `23756` e `startedAt` `2026-11-20T16:53:37.357Z`; nenhum reinício. Os demais plugins conservaram ID, caminho, estado e enabled. Evidências locais: `.local/compat-016/main-{plugins-after.json,plugin-logs.log,daemon-before.json,daemon-after.json}`. Nenhum push ou PR foi feito.
+
+A primeira tentativa de registro foi interrompida porque `$ErrorActionPreference = 'Stop'` tratou o aviso normal de confiança da CLI em stderr como erro fatal (`NativeCommandError`). O catálogo foi inspecionado antes de retomar; a instalação foi repetida usando o código de saída da CLI e terminou com sucesso. Nenhum dado de negócio foi alterado. O rollback não precisou ser aplicado após a instalação bem-sucedida.
+
+Se for necessário voltar atrás, remova apenas o registro novo e reinstale o diretório antigo (não apagar nenhuma pasta):
+
+```powershell
+$oldPlugin = Join-Path $env:LOCALAPPDATA 'BusinessMap\releases\0.5.0\node_modules\business-map'
+paseo plugin remove business-model-board --host 127.0.0.1:6767 --json
+paseo plugin install $oldPlugin --host 127.0.0.1:6767 --json
+paseo plugin ls --host 127.0.0.1:6767 --json
+```
+
+A CLI não substitui uma origem já registrada com o mesmo ID; por isso o rollback remove o registro antes de reinstalar. Isso restaura o estado anterior, que já falhava pela faixa 0.15; não torna o pacote antigo compatível com 0.16. Não reiniciar o daemon principal.
 
 ## 4. M2 — prova do túnel
 
@@ -197,7 +212,7 @@ Estados globais: sem serviço / iniciando / precisa parear / conectado / incompa
 
 Pendências que seguem para as próximas frentes:
 
-1. **Fatia de compatibilidade Paseo 0.16.x** (seção 3): SDK, fixture, checks e servidor isolado aprovados. Inspeção visual aprovada pelo usuário nas quatro combinações; o pacote principal continua sem alteração, aguardando confirmação explícita para a troca. Ela vem antes do M3.
+1. **Fatia de compatibilidade Paseo 0.16.x** (seção 3): SDK, fixture, checks e servidor isolado aprovados. Inspeção visual aprovada pelo usuário nas quatro combinações e atualização principal autorizada concluída em 21/11, com running/Plugin ready e rollback preservado. Fatia concluída antes do M3.
 2. **M3:** schema v4, congelamento do contrato v3 usado pelo `cloud/` e migração protegida (PLUGIN-MVP.md §M3).
 3. **M4:** serviço parado depois de suspensão do PC deve aparecer como indisponível e ser recuperável, incluindo `service.owner.json` órfão.
 4. **M7:** perfil remoto restrito, aspas no `--mcp-command`, estado do túnel separado (429 ≠ "sem dados"), investigação do 409 recorrente no primeiro `tools/call`.
