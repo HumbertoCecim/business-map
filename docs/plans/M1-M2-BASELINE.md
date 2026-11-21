@@ -219,3 +219,20 @@ Pendências que seguem para as próximas frentes:
 5. Ideias abertas no card: `whoami.exe`/`icacls.exe` por caminho absoluto, investigação do 409, prova de widget visual (MCP App) no ChatGPT.
 
 **Base para a próxima etapa:** a `main` (com estes documentos). A branch `feat/ui-01` (PR #2, draft) só altera a UI do `cloud/` e não toca `shared/`, `server/`, `local/` nem `web/`. Por isso o MVP do plugin pode nascer da `main` sem integrar a UI-01 sem querer.
+
+## 8. Entrega para revisão e próximos passos gerais (21/11)
+
+O usuário autorizou o push e a abertura da [PR #3 — compatibilidade Paseo 0.16.x](https://github.com/HumbertoCecim/business-map/pull/3), de `feat/plugin-mvp` para `main`. Os registros anteriores de “sem push/PR” descrevem o estado na etapa de instalação, antes dessa autorização. A PR UI-01 (#2) permanece independente e sem alteração. Nenhum merge foi executado nesta entrega.
+
+O Claude Opus 5.5 foi consultado antes da publicação: recomendou preservar o diff mínimo, usar refspec explícito no push e manter os checks vinculados ao código realmente validado. O pacote instalado no principal continua sendo o artefato de `f694478`; os commits seguintes alteram somente esta documentação. O diff fora de `docs/` desde `8959574` deve continuar vazio. A segunda revisão do Opus será registrada no corpo da PR, sem representar um review formal de outro usuário do GitHub.
+
+Sequência recomendada, como orientação de trabalho futuro e não implementação desta PR:
+
+1. **Revisar e integrar a compatibilidade.** Avaliar a PR #3 e seu CI; somente após o merge criar a próxima branch da `main` atualizada. O workflow Cloud também é acionado por `package.json`/lockfile e deve ser acompanhado; ele não substitui os checks raiz já executados no PowerShell.
+2. **M3 — proteger a fronteira de dados antes da expansão.** Primeira fatia: congelar o contrato v3 e as dependências consumidas pelo `cloud/`, trocar os imports e comprovar regressão Cloud sem mudança de comportamento. Incluir a prova de que o writer antigo recusa uma fixture v4 sem regravar nada. Depois evoluir o modelo local e a migração explícita com backup v3 e teste de recuperação. Não misturar UI nova. Comandos Cloud definidos no plano: `npx --yes pnpm@10.33.1 --dir cloud typecheck`, `npx --yes pnpm@10.33.1 --dir cloud test` e `npx --yes pnpm@10.33.1 --dir cloud build`.
+3. **M4 — reduzir o atrito já observado.** Iniciar/reutilizar serviço, abrir pareamento e recuperar serviço parado após suspensão, incluindo `service.owner.json` órfão. Preservar escritor único e sessão humana em memória; não reiniciar o daemon. É independente do schema de M3 e pode avançar como frente separada, sem ampliar esta PR.
+4. **M5 e M6 — construir o uso local sobre a base estável.** M5 depende de M3/M4: ideias, sessões e revisão humana com mapa existente preservado. M6 vem após o modelo e o shell de M5: catálogo fechado de indicador, lista e nota, sem app builder universal.
+5. **M7 — tornar a prova remota apropriada ao produto.** Após M2/M3/M4, introduzir grant por empresa, leitura/proposta restritas e revogação; incorporar aspas Windows, diagnóstico do 409 e distinção entre túnel offline/429 e ausência de dados. Repetir a chamada no ChatGPT real após migrar a fixture.
+6. **M8 — fechar aceite e distribuição.** Consolidar instalação reproduzível, diagnóstico, restauração e documentação. Definir versão distinta para o próximo pacote distribuído (por exemplo `0.5.1`, ainda não decidido): o release antigo e o artefato desta fatia mantêm `0.5.0`, mas têm manifests diferentes. O SHA e o caminho identificam o artefato testado; não trocar sua versão retroativamente.
+
+O plano completo e seus critérios permanecem em [PLUGIN-MVP.md](PLUGIN-MVP.md). Nenhuma frente M3–M8 foi iniciada por esta entrega. O ambiente fictício pode ser encerrado pelos comandos da seção 3 quando não for mais necessário; o release antigo e o backup devem permanecer disponíveis enquanto o rollback for útil.
