@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark"><title>Canvas + agente local · GrowYourPlan</title>
+  <link rel="stylesheet" href="canvas.css"><link rel="icon" href="data:,">
+  <script src="canvas.js" defer></script>
+</head>
+<body>
+  <header class="topbar"><div class="brand"><span class="brand-leaf" aria-hidden="true">❧</span>GrowYourPlan</div><div class="top-meta"><span class="study-label">Laboratório local · dados fictícios</span><button class="icon-button" id="theme" aria-label="Alternar tema">◐</button></div></header>
+  <main class="page">
+    <section class="intro"><div><span class="eyebrow">Seu modelo em construção</span><h1 class="serif">Seu negócio, em uma página.</h1><p>Conecte as partes. Converse com um agente. Decida o que fica.</p></div><div class="session-note" id="saveStatus" role="status">Conectando ao teste local…</div></section>
+    <p class="connection-error" id="connectionError" role="alert" hidden></p>
+    <section class="studio" aria-label="Canvas do negócio">
+      <div class="studio-head"><div class="business-title"><span class="business-monogram">a.</span><div><h2 id="businessTitle">Ateliê Aurora</h2><p>Oficinas de desenho para adultos</p></div></div><button class="button" id="askCanvas">✧ Conversar com o Canvas</button><button class="proposal-button" id="review">Sugestões <span class="count">0</span></button></div>
+      <div class="tools"><nav class="breadcrumbs" aria-label="Localização">Ateliê Aurora <span aria-hidden="true">›</span> Modelo de negócio</nav><label class="search"><input id="search" type="search" placeholder="Encontrar uma ideia…" aria-label="Buscar ideias"></label></div>
+      <div class="work-grid"><section class="stage" id="stage" aria-label="Nove blocos"></section><aside class="inspector" id="inspector" aria-label="Ideia e conversa"></aside></div>
+      <div class="resume"><span aria-hidden="true">↗</span><div><strong>Um olhar a mais, com você no comando.</strong><p>As sugestões ficam separadas até você revisar. Concordância da IA não é validação de mercado.</p></div></div>
+    </section>
+    <div class="study-footer"><span id="sessionFooter">Teste isolado · salvamento neste computador.</span><button id="refresh" class="button">Atualizar dados</button></div>
+  </main>
+  <dialog id="mobileDetail" aria-label="Ideia e conversa"></dialog><div id="toast" class="toast" role="status" hidden></div>
+</body></html>

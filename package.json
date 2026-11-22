@@ -33,6 +33,8 @@
     "SECURITY.md"
   ],
   "scripts": {
+    "canvas:local": "tsx design-lab/canvas-agente/serve.ts",
+    "canvas:local:open": "tsx design-lab/canvas-agente/open.ts --open",
     "typecheck": "tsc --noEmit && tsc --noEmit -p web/tsconfig.json",
     "test": "tsx --test server/tests/*.test.ts local/tests/*.test.ts",
     "build": "node scripts/build.mjs",

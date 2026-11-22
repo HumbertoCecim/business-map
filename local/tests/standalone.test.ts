@@ -133,6 +133,27 @@ test("Ask validates complete output, deduplicates requests and cancels the exact
   const bad = manager.start({ ...input, requestId: "bad", question: "BAD_TEST" }, snapshot); await wait(bad.id); assert.equal(bad.status, "error"); assert.equal(writes, 1);
   const slow = manager.start({ ...input, requestId: "slow", question: "SLOW_TEST" }, snapshot); await new Promise(resolve => setTimeout(resolve, 150)); manager.cancel(slow.id); await manager.close(); assert.equal(slow.status, "cancelled"); assert.equal(writes, 1);
 });
+  test("Ask limits concurrency until settlement and times out without committing a partial answer", async t => {
+    const { root, parent } = await fixture(t), script = path.join(parent, "wait-provider.cjs");
+    await writeFile(script, "process.stdin.resume(); setTimeout(()=>{}, 60000);");
+    const snapshot = await new BoardStore().get({ root, projectId: "test" });
+    let writes = 0;
+    const manager = new AskManager(async () => { writes++; return []; }, async () => ({ versions: [], omissions: [] }), async () => ({ executable: process.execPath, prefix: [script] }), { timeoutMs: 300 });
+    try {
+      assert.ok((await manager.providers()).providers.every(p => p.available));
+      const input = { requestId: "deadline", provider: "codex" as const, question: "Wait" };
+      const job = manager.start(input, snapshot);
+      assert.equal(manager.start(input, snapshot), job);
+      assert.throws(() => manager.start({ ...input, requestId: "parallel" }, snapshot), /ASK_BUSY/);
+      for (let i = 0; i < 300 && job.status === "running"; i++) await new Promise(resolve => setTimeout(resolve, 10));
+      assert.equal(job.status, "error"); assert.match(job.error!, /ASK_TIMEOUT/);
+      await manager.close(); assert.equal(writes, 0);
+      const next = manager.start({ ...input, requestId: "after-timeout" }, snapshot);
+      manager.cancel(next.id);
+      assert.throws(() => manager.start({ ...input, requestId: "during-cancel" }, snapshot), /ASK_BUSY/);
+      await manager.close(); assert.equal(next.status, "cancelled"); assert.equal(writes, 0);
+    } finally { await manager.close(); }
+  });
 test("concurrent CLI launches reuse one healthy detached writer and stop it in order", async t => {
   const { root } = await fixture(t);
   const [one, two] = await Promise.all([ensureService(root), ensureService(root)]);
