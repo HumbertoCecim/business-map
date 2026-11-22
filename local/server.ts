@@ -10,7 +10,7 @@ import { SkillRepository } from "../server/skills";
 import { commandSchema, makeId, suggestionSchema, type Suggestion } from "../shared/model";
 import { digest, registerProject, removeRuntime, token, writeRuntime, type Runtime } from "./runtime";
 import { queryBoard } from "./query";
-import { AskManager } from "./ask";
+import { AskManager, type AskLimits, type providerCommand } from "./ask";
 import { handleMcp } from "./mcp";
 import { PairingCodes } from "./pairing";
 import { controlSocketPath, startControl } from "./control";
@@ -41,7 +41,7 @@ export function prepareSuggestion(input: z.infer<typeof suggestionInputSchema>, 
     id: `suggestion-${digest(`${input.sourceAgentId}:${input.requestId}:${index}`).slice(0, 32)}`, requestId: input.requestId, sourceAgentId: input.sourceAgentId,
     baseRevision: input.baseRevision, createdAt: new Date().toISOString(), status: "pending", stale: input.baseRevision !== snapshot.board.revision });
 }
-export async function startService(options: { root: string; projectId?: string; port?: number; assetsDir?: string }) {
+export async function startService(options: { root: string; projectId?: string; port?: number; assetsDir?: string; resolveAskProvider?: typeof providerCommand; askLimits?: AskLimits }) {
   const location = await registerProject(options.root, options.projectId), dir = path.join(location.root, ".business-board");
   try { const stat = await lstat(dir); if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error("Invalid board directory."); } catch (e) { if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e; }
   await mkdir(dir, { recursive: true });
@@ -70,7 +70,7 @@ export async function startService(options: { root: string; projectId?: string; 
     const snapshot = await store.apply(location, current.board.revision, current.fingerprint, { type: "suggestion.batch", suggestions: proposals }, { id: `agent:${source}:${requestId}`, value: digest(JSON.stringify(candidates)) });
     publish(snapshot); return proposals.map(s => s.id);
   });
-  const ask = new AskManager(submit, snapshot => loadAskSkills(snapshot.board, (version, resource) => skills.read(location, version, resource)));
+  const ask = new AskManager(submit, snapshot => loadAskSkills(snapshot.board, (version, resource) => skills.read(location, version, resource)), options.resolveAskProvider, options.askLimits);
   const json = (res: ServerResponse, value: unknown, status = 200) => { res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" }); res.end(JSON.stringify(value)); };
   const assets = options.assetsDir || path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../web/build");
   const command = async (data: any) => enqueue(async () => {
@@ -144,7 +144,7 @@ export async function startService(options: { root: string; projectId?: string; 
       }
     }
     return json(res, { error: "Route not found." }, 404);
-  })().catch(error => { if (res.headersSent) { res.end(); return; } const message = error instanceof Error ? error.message : String(error); json(res, { error: message }, message.startsWith("UNAUTHORIZED") ? 401 : message.startsWith("FORBIDDEN") ? 403 : /CONFLICT|requestId|OWNER_BUSY|MIGRATION_REQUIRED/.test(message) ? 409 : 400); }); });
+  })().catch(error => { if (res.headersSent) { res.end(); return; } const message = error instanceof Error ? error.message : String(error); json(res, { error: message }, message.startsWith("UNAUTHORIZED") ? 401 : message.startsWith("FORBIDDEN") ? 403 : /CONFLICT|requestId|OWNER_BUSY|MIGRATION_REQUIRED|ASK_BUSY/.test(message) ? 409 : 400); }); });
   async function stop() {
     if (closing) return; closing = true;
     await control?.close();

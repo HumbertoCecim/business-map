@@ -28,6 +28,7 @@ export const providerAnswerJsonSchema = () => z.toJSONSchema(answerSchema, { tar
 export type AskJob = { id: string; status: "running" | "done" | "error" | "cancelled"; text?: string; error?: string; suggestionIds?: string[] };
 export type AskInput = { requestId: string; provider: "codex" | "claude"; model?: string; question: string; targetIds?: string[]; history?: unknown[] };
 export type ProviderCommand = { executable: string; prefix: string[] };
+export type AskLimits = { timeoutMs?: number; maxConcurrent?: number };
 export async function providerCommand(provider: "codex" | "claude"): Promise<ProviderCommand | null> {
   const override = process.env[provider === "codex" ? "BUSINESS_CODEX_EXECUTABLE" : "BUSINESS_CLAUDE_EXECUTABLE"];
   if (override) { await access(override); return { executable: override, prefix: [] }; }
@@ -62,14 +63,27 @@ export class AskManager {
   private children = new Map<string, ChildProcess>();
   private completions = new Map<string, Promise<void>>();
   private committing = new Set<string>();
-  constructor(private submitBatch: (candidates: unknown[], snapshot: Snapshot, source: string, requestId: string) => Promise<string[]>, private skillsContext: (snapshot: Snapshot) => Promise<AskSkills>, private resolveProvider = providerCommand) {}
-  async providers() { return { providers: await Promise.all((["codex", "claude"] as const).map(async id => ({ id, available: !!await providerCommand(id), identity: "self-declared local CLI provider" }))) }; }
+  private timeoutMs: number;
+  private maxConcurrent: number;
+  constructor(private submitBatch: (candidates: unknown[], snapshot: Snapshot, source: string, requestId: string) => Promise<string[]>, private skillsContext: (snapshot: Snapshot) => Promise<AskSkills>, private resolveProvider = providerCommand, limits: AskLimits = {}) {
+    this.timeoutMs = limits.timeoutMs ?? 180_000; this.maxConcurrent = limits.maxConcurrent ?? 1;
+    if (!Number.isFinite(this.timeoutMs) || this.timeoutMs <= 0 || !Number.isInteger(this.maxConcurrent) || this.maxConcurrent < 1) throw new Error("Invalid Ask limits.");
+  }
+  async providers() { return { providers: await Promise.all((["codex", "claude"] as const).map(async id => ({ id, available: !!await this.resolveProvider(id), identity: "self-declared local CLI provider" }))) }; }
   start(input: AskInput, snapshot: Snapshot) {
     const hash = JSON.stringify(input), prior = this.requests.get(input.requestId);
     if (prior) { if (prior.hash !== hash) throw new Error("requestId already used with different content."); return this.jobs.get(prior.id)!; }
+    // Count until the child has actually exited, including after cancellation.
+    if (this.completions.size >= this.maxConcurrent) throw new Error("ASK_BUSY: wait for the current conversation to finish.");
     const job: AskJob = { id: randomUUID(), status: "running" };
     this.jobs.set(job.id, job); this.requests.set(input.requestId, { hash, id: job.id });
-    const completion = this.run(job, input, snapshot);
+    const timer = setTimeout(() => {
+      if (job.status === "running" && !this.committing.has(job.id)) {
+        job.status = "error"; job.error = "ASK_TIMEOUT: conversation exceeded the time limit.";
+        this.children.get(job.id)?.kill();
+      }
+    }, this.timeoutMs);
+    const completion = this.run(job, input, snapshot).finally(() => clearTimeout(timer));
     this.completions.set(job.id, completion);
     void completion.finally(() => this.completions.delete(job.id));
     return job;
@@ -83,7 +97,7 @@ export class AskManager {
   }
   async close() { for (const job of this.jobs.values()) if (job.status === "running") this.cancel(job.id); await Promise.allSettled([...this.completions.values()]); }
   private async run(job: AskJob, input: AskInput, snapshot: Snapshot) {
-    const cancelled = () => job.status === "cancelled";
+    const cancelled = () => job.status !== "running";
     try {
       const skills = await this.skillsContext(snapshot);
       const prompt = buildAskPrompt(input, snapshot.board, skills);
@@ -125,7 +139,7 @@ export class AskManager {
       this.committing.add(job.id);
       job.suggestionIds = await this.submitBatch(candidates, snapshot, `${input.provider}:local-cli:self-declared`, input.requestId);
       job.text = answer.answer; job.status = "done";
-    } catch (e) { if (job.status !== "cancelled") { job.status = "error"; job.error = e instanceof Error ? e.message : String(e); } }
+    } catch (e) { if (job.status === "running") { job.status = "error"; job.error = e instanceof Error ? e.message : String(e); } }
     finally { this.children.delete(job.id); this.committing.delete(job.id); }
   }
 }

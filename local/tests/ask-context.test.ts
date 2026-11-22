@@ -36,6 +36,15 @@ test("whole-map card excerpts have explicit omission notes and keep JSON intact"
   assert.ok(prompt.length <= ASK_PROMPT_LIMIT);
   assert.throws(() => buildAskBoardContext(board, ["removed-card"]), /ASK_TARGET_NOT_FOUND/);
 });
+test("card revisions are proposals with exact targets and omitted content stays protected", () => {
+  const board = emptyBoard("canvas"); board.sections = [{id:"customers",title:"Customers",questions:"?",cards:[card("existing", "Human content")]}];
+  const before = structuredClone(board), prompt = buildAskPrompt({question:"Improve the next step",targetIds:["canvas"]},board,noSkills);
+  assert.match(prompt,/Never apply changes to confirmed human text/);
+  assert.match(prompt,/targetKind=card and its exact ID/);
+  assert.match(prompt,/do not replace omitted text with excerpts/);
+  assert.equal(JSON.parse(prompt.slice(prompt.indexOf("\n")+1)).board.sections[0].cards[0].id,"existing");
+  assert.deepEqual(board,before);
+});
 function skill(files: SkillVersion["files"]): SkillVersion {
   const treeHash = "a".repeat(64), skillId = `skill-${treeHash.slice(0, 20)}`, id = `${skillId}@${treeHash}`;
   return { id, skillId, name: "Evidence skill", description: "Review evidence", treeHash, files, sourcePath: "source", sourceUrl: "", createdAt: "now", parentVersionId: null, originalVersionId: id, rationale: "Confirmed", diff: "VERY_LARGE_PRIVATE_DIFF_NOT_SENT" };

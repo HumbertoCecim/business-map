@@ -1,0 +1,177 @@
+{
+  "blocks": [
+    {
+      "id": "segments",
+      "name": "Segmentos de clientes",
+      "question": "Para quem isso faz diferença?",
+      "group": "people",
+      "number": "01"
+    },
+    {
+      "id": "value",
+      "name": "Proposta de valor",
+      "question": "Que mudança queremos provocar?",
+      "group": "people",
+      "number": "02"
+    },
+    {
+      "id": "channels",
+      "name": "Canais",
+      "question": "Onde as pessoas nos encontram?",
+      "group": "experience",
+      "number": "03"
+    },
+    {
+      "id": "relationships",
+      "name": "Relacionamento",
+      "question": "Como construímos confiança?",
+      "group": "experience",
+      "number": "04"
+    },
+    {
+      "id": "revenue",
+      "name": "Fontes de receita",
+      "question": "Pelo que as pessoas pagariam?",
+      "group": "money",
+      "number": "05"
+    },
+    {
+      "id": "resources",
+      "name": "Recursos principais",
+      "question": "Do que precisamos para entregar?",
+      "group": "operations",
+      "number": "06"
+    },
+    {
+      "id": "activities",
+      "name": "Atividades principais",
+      "question": "Que trabalho precisa acontecer?",
+      "group": "operations",
+      "number": "07"
+    },
+    {
+      "id": "partners",
+      "name": "Parcerias principais",
+      "question": "Quem pode construir isso conosco?",
+      "group": "operations",
+      "number": "08"
+    },
+    {
+      "id": "costs",
+      "name": "Estrutura de custos",
+      "question": "O que mantém esse negócio de pé?",
+      "group": "money",
+      "number": "09"
+    }
+  ],
+  "seed": [
+    {
+      "id": "c1",
+      "block": "segments",
+      "title": "Adultos que querem voltar a desenhar",
+      "text": "Pessoas que desenhavam quando crianças e hoje sentem falta de um espaço para criar, sem cobrança de desempenho.",
+      "kind": "hypothesis",
+      "step": "Conversar com três pessoas sobre a última vez que desenharam.",
+      "related": [
+        "c2",
+        "c3"
+      ]
+    },
+    {
+      "id": "c2",
+      "block": "value",
+      "title": "Desenhar sem precisar ter talento",
+      "text": "Um encontro acolhedor para experimentar o desenho, deixar a autocrítica de lado e recuperar o prazer de criar.",
+      "kind": "statement",
+      "step": "Perguntar se essa promessa descreve o que as pessoas procuram.",
+      "related": [
+        "c1",
+        "c4"
+      ]
+    },
+    {
+      "id": "c3",
+      "block": "channels",
+      "title": "Instagram e indicações de alunos",
+      "text": "Mostrar o processo das oficinas e convidar participantes a trazer alguém. Ainda não sabemos qual canal traz interesse real.",
+      "kind": "hypothesis",
+      "step": "Comparar dois convites com a mesma oferta.",
+      "related": [
+        "c1",
+        "c5"
+      ]
+    },
+    {
+      "id": "c4",
+      "block": "relationships",
+      "title": "Turmas pequenas, com atenção de perto",
+      "text": "Encontros com até oito participantes e uma conversa curta ao final. Escolha de formato para o primeiro piloto.",
+      "kind": "decision",
+      "step": "Testar se todas as pessoas conseguem receber atenção na oficina.",
+      "related": [
+        "c2",
+        "c7"
+      ]
+    },
+    {
+      "id": "c5",
+      "block": "revenue",
+      "title": "Encontro avulso e ciclo de quatro oficinas",
+      "text": "Duas formas de participar: experimentar um encontro ou acompanhar um ciclo. Preço e preferência ainda precisam ser testados.",
+      "kind": "hypothesis",
+      "step": "Apresentar as duas opções em conversas de descoberta.",
+      "related": [
+        "c1",
+        "c9"
+      ]
+    },
+    {
+      "id": "c6",
+      "block": "resources",
+      "title": "Facilitadora, materiais e espaço",
+      "text": "Conhecimento de facilitação, papéis e ferramentas simples, além de um espaço iluminado e acessível.",
+      "kind": "statement",
+      "step": "Listar o mínimo necessário para uma oficina-piloto.",
+      "related": [
+        "c7",
+        "c9"
+      ]
+    },
+    {
+      "id": "c7",
+      "block": "activities",
+      "title": "Preparar, facilitar e ouvir",
+      "text": "Planejar os exercícios, conduzir os encontros e ouvir as pessoas para ajustar as próximas oficinas.",
+      "kind": "statement",
+      "step": "Desenhar um roteiro simples de noventa minutos.",
+      "related": [
+        "c4",
+        "c6"
+      ]
+    },
+    {
+      "id": "c8",
+      "block": "partners",
+      "title": "Cafés e ateliês do bairro",
+      "text": "Possíveis parceiros para espaço e divulgação. Ainda não há parceria combinada neste exemplo.",
+      "kind": "hypothesis",
+      "step": "Conversar com dois espaços sobre um encontro experimental.",
+      "related": [
+        "c3",
+        "c6"
+      ]
+    },
+    {
+      "id": "c9",
+      "block": "costs",
+      "title": "Espaço, materiais e divulgação",
+      "text": "Custos previstos para cada encontro. Precisamos separar gastos por turma dos gastos que existem mesmo sem oficina.",
+      "kind": "hypothesis",
+      "step": "Estimar o custo de uma turma com seis participantes.",
+      "related": [
+        "c5",
+        "c6"
+      ]
+    }
+  ]
+}
